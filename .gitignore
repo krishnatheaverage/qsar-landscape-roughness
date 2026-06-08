@@ -17,6 +17,10 @@ xdata/
 manuscript.json
 node_modules/
 
+# ...but keep the compiled paper PDFs in the repo for download
+!paper/main.pdf
+!paper/supporting_information.pdf
+
 # LaTeX aux files
 *.aux
 *.log
