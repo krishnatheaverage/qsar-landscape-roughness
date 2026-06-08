@@ -1,15 +1,15 @@
 """
-robustness.py METRIC  --  recompute the key quantities for every test compound across
-a range of neighbourhood sizes k, under a chosen distance metric, for all 30 targets.
+robustness.py METRIC  --  recompute the key numbers for every test compound across a
+range of k, under a chosen distance metric, for all 30 targets.
 
-Metric-agnostic constructs (so ECFP4 / ECFP6 / descriptor-Euclidean are comparable):
-    local_var(i)  = mean over k-NN of (y_i - y_j)^2      (landscape roughness; uses y_i)
-    nbr_disp(i)   = std of the k-NN neighbours' activities (y-free)
-AD controls (under the same metric):
-    nn_dist(i)    = distance to nearest training neighbour (k-independent)
+metric-agnostic versions (so ECFP4 / ECFP6 / descriptor-Euclidean line up):
+    local_var(i)  = mean over k-NN of (y_i - y_j)^2   (roughness, uses y_i)
+    nbr_disp(i)   = std of the k-NN activities          (y-free)
+AD controls (same metric):
+    nn_dist(i)    = distance to nearest neighbour (no k dependence)
     local_dens(i) = mean distance to the k-NN
 
-Saved long-format -> robustness_<metric>.csv  with rf_err / cliff_mol merged from cache/.
+saved long-format -> robustness_<metric>.csv, with rf_err / cliff_mol merged from cache/.
 """
 import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -50,7 +50,7 @@ def descmat(smiles):
     return np.array(rows, float)
 
 def dist_test_train(te_smiles, tr_smiles):
-    """Return [n_te, n_tr] distance matrix under the chosen metric."""
+    """[n_te, n_tr] distance matrix under the chosen metric."""
     if metric in ("ecfp4", "ecfp6"):
         g = gen4 if metric == "ecfp4" else gen6
         trf = fps(tr_smiles, g); tef = fps(te_smiles, g)
@@ -59,7 +59,7 @@ def dist_test_train(te_smiles, tr_smiles):
             if fp is None: continue
             D[i] = 1.0 - np.array(DataStructs.BulkTanimotoSimilarity(fp, trf))
         return D
-    else:  # descriptor Euclidean, standardised by TRAIN stats
+    else:  # descriptor Euclidean, standardised on train stats
         Xtr = descmat(tr_smiles); Xte = descmat(te_smiles)
         mu = np.nanmean(Xtr, 0); sd = np.nanstd(Xtr, 0) + 1e-9
         Xtr = np.where(np.isfinite(Xtr), Xtr, mu); Xte = np.where(np.isfinite(Xte), Xte, mu)

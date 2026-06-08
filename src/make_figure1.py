@@ -1,4 +1,4 @@
-"""make_figure1.py -- main-text Figure 1 (panels A,B,D; panel C demoted) + Results numbers."""
+"""make_figure1.py -- main Figure 1 (panels A, B, D) plus the numbers for the Results text."""
 import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from config import ROOT, PAPER_DIR, DATA_DIR, CACHE_DIR, CACHE_GNN, CACHE_GNN2, CACHE_MODELS, RESULTS_DIR, FIGURES_DIR, benchmark_dir
@@ -85,7 +85,7 @@ ax[2].set_xlabel("AUC for flagging labelled cliffs\n(median ± IQR)", fontsize=9
 ax[2].set_title("C  Flagging cliffs a-priori (no activity used)", fontsize=10.5, loc="left", weight="bold")
 plt.tight_layout(); plt.savefig(os.path.join(FIGURES_DIR, "figure1_main.png"), dpi=160, bbox_inches="tight")
 
-# ---- exact numbers for the Results prose ----
+# numbers for the Results text
 cliff = df.cliff_mol.astype(bool)
 ratios = df.groupby("dataset").apply(lambda g: g[g.cliff_mol==1].rf_err.mean()/g[g.cliff_mol==0].rf_err.mean())
 per_t_higher = df.groupby("dataset").apply(lambda g: g[g.cliff_mol==1].rf_err.mean() > g[g.cliff_mol==0].rf_err.mean())

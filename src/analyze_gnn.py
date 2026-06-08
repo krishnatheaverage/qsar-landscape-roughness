@@ -1,4 +1,4 @@
-"""analyze_gnn.py -- compare fixed-60 vs tuned GIN; re-test the panel-C reversal."""
+"""analyze_gnn.py -- fixed-60 vs tuned GIN, and re-check the panel-C reversal."""
 import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from config import ROOT, PAPER_DIR, DATA_DIR, CACHE_DIR, CACHE_GNN, CACHE_GNN2, CACHE_MODELS, RESULTS_DIR, FIGURES_DIR, benchmark_dir
@@ -7,7 +7,7 @@ import matplotlib; matplotlib.use("Agg"); import matplotlib.pyplot as plt
 from scipy.stats import spearmanr, wilcoxon
 
 df = pd.read_csv(os.path.join(RESULTS_DIR, "all_per_compound.csv"))  # has fixed-60 gnn_err
-# merge tuned gnn_err (cache_gnn2 aligned to cache, concatenated in same sorted dataset order)
+# pull in the tuned gnn_err (cache_gnn2, same sorted order as cache)
 tuned = []
 for f in sorted(os.listdir(CACHE_DIR)):
     tuned.append(pd.read_csv(os.path.join(CACHE_GNN2, f)))
@@ -17,7 +17,7 @@ df["gnn_err_tuned"] = tuned.gnn_err.values
 df["gap_fixed"] = df.gnn_err - df.rf_err
 df["gap_tuned"] = df.gnn_err_tuned - df.rf_err
 
-# (1) did tuning improve fit?
+# did tuning actually help the fit?
 per_t = df.groupby("dataset").agg(mae_fixed=("gnn_err","mean"), mae_tuned=("gnn_err_tuned","mean"),
                                   mae_rf=("rf_err","mean")).reset_index()
 print("=== GNN fit: tuned vs fixed-60 (mean MAE) ===")
@@ -25,7 +25,7 @@ print(f"  overall mean MAE  fixed-60={df.gnn_err.mean():.3f}  tuned={df.gnn_err_
 print(f"  tuned better on {int((per_t.mae_tuned < per_t.mae_fixed).sum())}/30 targets; "
       f"GNN still > RF on {int((per_t.mae_tuned > per_t.mae_rf).sum())}/30")
 
-# (2) re-test the reversal with the tuned model
+# re-check the reversal with the tuned model
 print("\n=== Deep-learning gap (GNN - RF) by model ===")
 for tag, gcol in [("fixed-60", "gap_fixed"), ("tuned", "gap_tuned")]:
     rhos = np.array([spearmanr(s["dirichlet"], s[gcol]).statistic
@@ -37,7 +37,7 @@ for tag, gcol in [("fixed-60", "gap_fixed"), ("tuned", "gap_tuned")]:
           f"wilcoxon_p={wilcoxon(rhos).pvalue:.1e} | quartiles "
           + " ".join(f"Q{q}={qg.loc[q]:+.3f}" for q in [1,2,3,4]))
 
-# figure: MAE scatter + quartile bars (fixed vs tuned)
+# figure: MAE scatter + quartile bars, fixed vs tuned
 df["rough_q"] = df.groupby("dataset")["dirichlet"].transform(lambda s: pd.qcut(s.rank(method="first"), 4, labels=[1,2,3,4]))
 fig, ax = plt.subplots(1, 2, figsize=(12.5, 5))
 lim = [0.2, 1.25]

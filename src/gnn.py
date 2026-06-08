@@ -1,14 +1,14 @@
 """
-gnn.py -- compact GIN (graph isomorphism network) baseline, pure PyTorch (CPU).
-Trains on the official train split of each MoleculeACE target and records the
-per-compound absolute TEST error, aligned to the rows already in cache/<dataset>.csv.
+gnn.py -- small GIN baseline, plain PyTorch on CPU.
+trains on each target's train split and saves the per-compound test error, in the
+same row order as cache/<dataset>.csv.
 
-The point is not a tuned SOTA GNN; it is a message-passing model whose smoothness
-prior (similar graphs -> similar predictions) lets us test whether the deep-learning
-penalty on activity cliffs concentrates in high-roughness regions.
+not trying to be a SOTA GNN -- just a message-passing model with a smoothness prior
+(similar graphs -> similar preds), so we can check whether its cliff penalty piles
+up in the rough regions.
 
-Output: cache_gnn/<dataset>.csv  with columns [smiles, gnn_err]  (same row order as cache).
-Usage: python3 gnn.py DATASET ...  |  python3 gnn.py all
+out: cache_gnn/<dataset>.csv  [smiles, gnn_err]
+usage: python3 gnn.py DATASET ...  |  python3 gnn.py all
 """
 import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -59,9 +59,9 @@ class GIN(nn.Module):
         H = X; readout = 0
         for mlp in self.mlps:
             neigh = torch.bmm(A, H)             # sum over neighbours
-            H = mlp(H + neigh) * M.unsqueeze(-1)  # GIN-0, mask padded atoms
+            H = mlp(H + neigh) * M.unsqueeze(-1)  # GIN-0, mask the padding
             cnt = M.sum(1, keepdim=True).clamp(min=1)
-            readout = readout + H.sum(1) / cnt    # masked mean-pool, summed across layers
+            readout = readout + H.sum(1) / cnt    # masked mean-pool, summed over layers
         return self.head(readout).squeeze(-1)
 
 def run(name):

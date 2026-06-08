@@ -1,19 +1,18 @@
 """
-enrichment.py -- operational triage value of a structure-only roughness flag.
+enrichment.py -- is a structure-only roughness flag actually useful for triage?
 
-Question: if a modeler flags the top f% of predictions as low-confidence, what fraction
-of the genuinely problematic compounds is captured, and how does roughness compare with
-the standard reliability signals used in their intended direction?
+if you flag the top f% of predictions as low-confidence, how many of the problem
+compounds do you catch, and how does roughness stack up against the usual signals?
 
-Two targets to enrich (within each of the 30 tasks, then averaged across tasks):
-  - high-error compounds  : top-quartile per-compound RF error
+two things to catch (per target, then averaged over the 30):
+  - high-error compounds : top-quartile RF error
   - labelled activity cliffs
 
-Risk scores (higher = flagged first), each in its intended orientation:
-  - roughness     : nbr_disp (high-error task) / sali_mean (cliff task)   [y-free]
-  - applic. domain: -nn_sim  (low similarity = risky; standard AD orientation)
-  - uncertainty   : rf_var   (high tree variance = risky)
-  - random        : shuffled
+risk scores (higher = flagged first), each pointed the right way:
+  - roughness  : nbr_disp (high-error) / sali_mean (cliffs)   [y-free]
+  - AD         : -nn_sim  (low similarity = risky)
+  - uncertainty: rf_var
+  - random     : shuffled
 """
 import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -26,7 +25,7 @@ df = pd.read_csv(os.path.join(RESULTS_DIR, "all_per_compound.csv"))
 FRACS = np.arange(0.05, 0.51, 0.05)
 
 def recall_curve(score_col, sign, pos_mask_fn):
-    """Avg recall vs fraction flagged, across targets; score risk = sign*column."""
+    """avg recall vs fraction flagged, over targets; risk = sign*column."""
     curves = []
     for _, g in df.groupby("dataset"):
         pos = pos_mask_fn(g)

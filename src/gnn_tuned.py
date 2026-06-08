@@ -1,8 +1,8 @@
 """
-gnn_tuned.py [all|DATASET...] -- retrain the GIN *properly* to remove the undertraining
-confound behind panel C: 10% validation split, up to 250 epochs, best-checkpoint
-selection on val MSE with early stopping (patience 25), wider hidden (128) + dropout.
-Saves per-compound test error to cache_gnn2/<dataset>.csv aligned to cache/.
+gnn_tuned.py [all|DATASET...] -- retrain the GIN properly so undertraining isn't the
+reason behind panel C. 10% val split, keep the best checkpoint on val MSE with early
+stopping, dropout in the head. saves per-compound test error to cache_gnn2/<dataset>.csv,
+aligned to cache/.
 """
 import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -79,7 +79,7 @@ def run(name):
     model = GIN(g_all[0][0].shape[1]); opt = torch.optim.Adam(model.parameters(), lr=LR)
     sched = torch.optim.lr_scheduler.ReduceLROnPlateau(opt, factor=0.5, patience=8)
     lossf = nn.MSELoss()
-    # size-bucketed batches (minimise padding); shuffle batch ORDER each epoch
+    # bucket batches by size to cut padding; reshuffle the batch order each epoch
     ti_sorted = ti[np.argsort([g_all[i][0].shape[0] for i in ti])]
     batches = [ti_sorted[s:s+BS] for s in range(0, len(ti_sorted), BS)]
     best_val, best_state, wait = 1e9, None, 0

@@ -1,14 +1,14 @@
 """
-analyze.py -- turn cached per-compound data into the paper's statistical claims.
+analyze.py -- turn the cached per-compound data into the paper's stats.
 
-(A) Per-target Spearman of each predictor vs RF error; aggregate across 30 targets
-    (median, sign-consistency, Wilcoxon vs 0, Benjamini-Hochberg FDR).
-(B) AD CONFOUND TEST: partial Spearman of each roughness construct vs error,
-    controlling for nearest-neighbour similarity + local density. Does roughness
-    survive after removing the "I'm far from training data" effect?
-(C) Cliff-classification AUC from the y-free constructs (revisiting the earlier null).
-(D) DEEP-LEARNING GAP: per-compound (gnn_err - rf_err) vs roughness, + quartile means.
-(E) Mixed-effects confirmation on within-target standardized data.
+(A) per-target Spearman of each predictor vs RF error, aggregated over the 30 targets
+    (median, sign-consistency, Wilcoxon vs 0, BH-FDR).
+(B) AD confound check: partial Spearman of each roughness measure vs error, controlling
+    for NN similarity + local density. does roughness survive once you remove the
+    "i'm far from training data" effect?
+(C) cliff-classification AUC from the y-free measures (back to the earlier null).
+(D) deep-learning gap: per-compound (gnn_err - rf_err) vs roughness, + quartile means.
+(E) mixed-effects sanity check on within-target z-scored data.
 """
 import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -23,7 +23,7 @@ warnings.filterwarnings("ignore")
 CACHE, CACHE_GNN = CACHE_DIR, CACHE_GNN
 OUT = RESULTS_DIR
 
-# ---- load & merge (by aligned row order) ----
+# load + merge (rows are already in the same order)
 frames = []
 for f in sorted(os.listdir(CACHE)):
     d = pd.read_csv(os.path.join(CACHE, f))
@@ -32,15 +32,15 @@ for f in sorted(os.listdir(CACHE)):
     d["gnn_err"] = g["gnn_err"].values
     frames.append(d)
 df = pd.concat(frames, ignore_index=True)
-df["gap"] = df["gnn_err"] - df["rf_err"]                 # >0 means GNN worse than RF
+df["gap"] = df["gnn_err"] - df["rf_err"]                 # >0 = GNN worse than RF
 print(f"Loaded {len(df)} test compounds across {df.dataset.nunique()} targets "
       f"({df.cliff_mol.mean()*100:.1f}% cliffs)\n")
 
-LANDSCAPE = ["dirichlet", "lipschitz"]                    # use the query's own y
+LANDSCAPE = ["dirichlet", "lipschitz"]                    # use the query's y
 APRIORI   = ["nbr_disp", "sali_max", "sali_mean", "holder"]  # y-free
 BASELINES = ["nn_sim", "local_dens", "rf_var", "mol_size"]   # AD + uncertainty + size
-SIGN = {"holder": -1, "nn_sim": -1, "local_dens": -1}        # expected-negative predictors
-def oriented(col):  # flip so "higher = expected higher error" for fair AUC/printing
+SIGN = {"holder": -1, "nn_sim": -1, "local_dens": -1}        # ones we expect to go negative
+def oriented(col):  # flip so higher = more expected error
     return SIGN.get(col, 1) * df[col]
 
 def agg_spearman(target="rf_err"):
@@ -67,7 +67,7 @@ print(A.to_string(index=False,
       formatters={c: "{:.3f}".format for c in ["median_rho","oriented_median","frac_consistent","wilcoxon_p","fdr_p"]}))
 A.to_csv(os.path.join(OUT, "tableA_spearman_vs_error.csv"), index=False)
 
-# ---- (B) partial Spearman controlling for AD (nn_sim, local_dens) ----
+# (B) partial Spearman, controlling for AD (nn_sim + local_dens)
 def partial_spearman(x, y, Z):
     m = np.isfinite(x) & np.isfinite(y) & np.all(np.isfinite(Z), axis=1)
     x, y, Z = x[m], y[m], Z[m]
@@ -97,7 +97,7 @@ for col in LANDSCAPE + APRIORI:
     Brows.append(dict(predictor=col, zero_order=np.median(z0), partial_AD=np.median(zp), retained_pct=ret))
 pd.DataFrame(Brows).to_csv(os.path.join(OUT, "tableB_partial_AD.csv"), index=False)
 
-# ---- (C) cliff-classification AUC from y-free constructs ----
+# (C) cliff AUC from the y-free measures
 print("\n=== (C) Flagging labelled cliffs from y-free constructs (per-target AUC, median) ===")
 for col in APRIORI + ["rf_var", "nn_sim"]:
     aucs = []
@@ -107,7 +107,7 @@ for col in APRIORI + ["rf_var", "nn_sim"]:
             aucs.append(roc_auc_score(s.cliff_mol, s[col] * SIGN.get(col, 1)))
     print(f"  {col:12s}: AUC {np.median(aucs):.3f}  [{np.min(aucs):.3f}, {np.max(aucs):.3f}]")
 
-# ---- (D) deep-learning gap ----
+# (D) deep-learning gap
 print("\n=== (D) Deep-learning gap: (GNN err - RF err) vs roughness ===")
 print(f"  Overall mean gap (GNN-RF): {df.gap.mean():+.3f}  | GNN worse on {(df.groupby('dataset').gap.mean()>0).mean()*100:.0f}% of targets")
 print(f"  Mean gap  cliffs={df[df.cliff_mol==1].gap.mean():+.3f}  non-cliffs={df[df.cliff_mol==0].gap.mean():+.3f}")
@@ -116,13 +116,13 @@ for col in ["dirichlet", "sali_mean", "nbr_disp"]:
             for ds, sub in df.groupby("dataset") for s in [sub[[col, "gap"]].dropna()] if len(s) > 10]
     rhos = np.array(rhos)
     print(f"  rho(gap, {col:9s}) median={np.median(rhos):+.3f}  consistent={np.mean(rhos>0)*100:.0f}%  wilcoxon_p={wilcoxon(rhos).pvalue:.1e}")
-# quartile means of gap by within-target roughness rank
+# gap by roughness quartile (within target)
 df["rough_q"] = df.groupby("dataset")["dirichlet"].transform(lambda s: pd.qcut(s.rank(method="first"), 4, labels=[1,2,3,4]))
 qg = df.groupby("rough_q").gap.mean()
 print("  mean gap by roughness quartile (Q1 smooth -> Q4 rough):",
       "  ".join(f"Q{q}={qg.loc[q]:+.3f}" for q in [1,2,3,4]))
 
-# ---- (E) mixed-effects confirmation (within-target standardized) ----
+# (E) mixed-effects check (within-target z-scored)
 print("\n=== (E) Mixed-effects: per-target z-scored error ~ roughness + AD controls + (1|target) ===")
 z = df.copy()
 for c in ["rf_err", "sali_mean", "nbr_disp", "dirichlet", "nn_sim", "local_dens", "mol_size"]:

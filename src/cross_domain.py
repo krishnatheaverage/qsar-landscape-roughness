@@ -1,7 +1,7 @@
 """
-cross_domain.py -- external validation outside bioactivity.
-Repeat the central test on two MoleculeNet physicochemical regression benchmarks
-(ESOL aqueous solubility; Lipophilicity logD), using scaffold splits.
+cross_domain.py -- external check outside bioactivity.
+same test on two MoleculeNet physchem benchmarks (ESOL solubility, Lipophilicity logD),
+with scaffold splits.
 """
 import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))

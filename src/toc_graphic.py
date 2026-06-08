@@ -1,4 +1,4 @@
-"""toc_graphic.py -- ACS TOC/abstract graphic (<= 3.25 x 1.75 in)."""
+"""toc_graphic.py -- the ACS TOC graphic (max 3.25 x 1.75 in)."""
 import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from config import ROOT, PAPER_DIR, DATA_DIR, CACHE_DIR, CACHE_GNN, CACHE_GNN2, CACHE_MODELS, RESULTS_DIR, FIGURES_DIR, benchmark_dir

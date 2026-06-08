@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""prep_doc.py -- transform manuscript.md into manuscript.json for the docx builder."""
+"""prep_doc.py -- turn manuscript.md into manuscript.json for the docx builder."""
 import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from config import ROOT, PAPER_DIR, DATA_DIR, CACHE_DIR, CACHE_GNN, CACHE_GNN2, CACHE_MODELS, RESULTS_DIR, FIGURES_DIR, benchmark_dir
@@ -8,7 +8,7 @@ import re, json, os
 SUP = lambda n: f"\u27e6{n}\u27e7"  # superscript marker ⟦n⟧
 src = open(os.path.join(PAPER_DIR, "manuscript.md"), encoding="utf-8").read()
 
-# ---- citation -> superscript (numbers are in ORDER OF APPEARANCE) ----
+# citations -> superscripts (numbered in order of appearance)
 CITES = [
     # grouped first
     (" (Vamathevan et al., 2019; Walters and Barzilay, 2021)", SUP("1,2")),
@@ -38,16 +38,16 @@ CITES = [
     (" (Benjamini and Hochberg, 1995)", SUP("25")),
 ]
 
-# slice body (Introduction .. before References)
+# grab the body (Introduction up to References)
 body = src[src.index("## Introduction"):src.index("## References")]
 for old, new in CITES:
     body = body.replace(old, new)
 
-# verify no author-year citations remain (allow version "(2026.03)")
+# make sure no author-year cites slipped through (the "(2026.03)" version string is fine)
 leftover = [m for m in re.findall(r"\([^()]*(?:19|20)\d\d[^()]*\)", body) if m != "(2026.03)"]
 assert not leftover, f"unconverted citations: {leftover}"
 
-# ---- figure renumber to order of appearance (placeholder swap) ----
+# renumber figures to order of appearance (swap via temp placeholders)
 body = body.replace("Figure 5", "\x01").replace("Figure 2", "\x02").replace("Figure 3", "\x03")
 body = body.replace("\x01", "Figure 2").replace("\x02", "Figure 3").replace("\x03", "Figure 5")
 
@@ -66,9 +66,9 @@ FIGS = {
 for f in FIGS.values():
     assert os.path.exists(f["path"]), f["path"]
 
-# ---- tokenize inline (bold/italic/superscript) ----
+# inline tokenizer (bold/italic/sub/superscript)
 def tok(s):
-    """Inline tokenizer: ** bold, * italic, _x/_{..} subscript, ^x/^{..} superscript, U+27E6..U+27E7 citation."""
+    """** bold, * italic, _x/_{..} subscript, ^x/^{..} superscript, U+27E6..U+27E7 citation."""
     runs = []; i = 0; n = len(s); bold = False; ital = False
     while i < n:
         c = s[i]
@@ -94,7 +94,7 @@ def tok(s):
         runs.append(r); i = j
     return runs
 
-# ---- parse body into blocks ----
+# parse the body into blocks
 blocks = []
 lines = body.split("\n")
 cur_sub = None
@@ -137,7 +137,7 @@ while i < len(lines):
     i += 1
 flush_fig()
 
-# ---- references in citation order (verified) ----
+# references, in citation order
 REFS = [
  "Vamathevan, J.; Clark, D.; Czodrowski, P.; Dunham, I.; Ferran, E.; Lee, G.; et al. Applications of Machine Learning in Drug Discovery and Development. *Nat. Rev. Drug Discov.* 2019, 18 (6), 463\u2013477.",
  "Walters, W. P.; Barzilay, R. Critical Assessment of AI in Drug Discovery. *Expert Opin. Drug Discov.* 2021, 16 (9), 937\u2013947.",

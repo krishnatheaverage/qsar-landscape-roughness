@@ -1,7 +1,7 @@
 """
-model2.py [all|DATASET...] -- second/third model classes for the model-agnosticism test.
-Trains HistGradientBoosting and SVR(RBF) on ECFP4 per target; records per-compound test
-error aligned to cache/<target>.csv. Output: cache_models/<target>.csv [smiles, gbt_err, svr_err].
+model2.py [all|DATASET...] -- two more model types for the model-agnostic check.
+trains HistGradientBoosting and SVR(RBF) on ECFP4 per target, records the per-compound
+test error aligned to cache/<target>.csv. out: cache_models/<target>.csv [smiles, gbt_err, svr_err].
 """
 import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))

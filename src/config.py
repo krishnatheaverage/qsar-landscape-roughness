@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
-"""Central path configuration. All locations are relative to the repository root
-so the pipeline runs from a fresh checkout. Override any of them with environment
-variables (QSAR_CACHE, QSAR_RESULTS, QSAR_FIGURES, QSAR_DATA, MOLECULEACE_DATA)."""
+"""all the paths live here, relative to the repo root so it runs from a fresh clone.
+override any of them with env vars (QSAR_CACHE, QSAR_RESULTS, QSAR_FIGURES, QSAR_DATA, MOLECULEACE_DATA)."""
 import os
 
 ROOT        = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -18,7 +17,7 @@ for _d in (FIGURES_DIR, RESULTS_DIR, DATA_DIR, CACHE_DIR, CACHE_GNN, CACHE_GNN2,
     os.makedirs(_d, exist_ok=True)
 
 def benchmark_dir():
-    """Locate the MoleculeACE benchmark_data directory (30 ChEMBL targets)."""
+    """find the MoleculeACE benchmark_data folder (the 30 ChEMBL targets)."""
     p = os.environ.get("MOLECULEACE_DATA")
     if p:
         return p
