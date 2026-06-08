@@ -1,4 +1,6 @@
 method,marginal_cov,cliff_cov,noncliff_cov,median_rel_width,frac_targets_cliff_improved
 standard,0.904,0.872,0.92,1.0,0.0
-roughness (SALI),0.904,0.912,0.898,1.16,0.87
-AD (1-NN sim),0.904,0.82,0.954,1.14,0.03
+rough-norm,0.904,0.912,0.898,1.16,0.87
+AD-norm,0.904,0.82,0.954,1.14,0.03
+rough-Mondrian,0.911,0.895,0.928,1.06,0.9
+AD-Mondrian,0.91,0.861,0.945,1.01,0.3

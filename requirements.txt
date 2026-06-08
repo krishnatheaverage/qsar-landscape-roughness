@@ -1,22 +1,22 @@
-# Core scientific stack
-numpy>=1.26
-pandas>=2.0
-scipy>=1.11
-scikit-learn>=1.3
-matplotlib>=3.7
-statsmodels>=0.14
+# Reference environment for the published results (Python 3.12).
+#
+# numpy / pandas / scipy / matplotlib are the exact versions used to generate the
+# downstream tables and figures; scikit-learn, RDKit, and PyTorch match the versions
+# reported in the manuscript. The analysis is deterministic under the fixed random
+# seeds, so minor patch differences in the numerical stack reproduce the reported
+# numbers. A conda alternative is provided in environment.yml.
 
-# Cheminformatics
-rdkit>=2023.3
+numpy==2.3.3
+pandas==2.3.3
+scipy==1.17.1
+matplotlib==3.10.6
+scikit-learn==1.8.0
+statsmodels==0.14.4
+rdkit==2026.3.1
+torch==2.12.0
 
-# Graph-network experiments (CPU build is sufficient)
-torch>=2.0
-
-# Global roughness baseline (ROGI)
+# Global-roughness baseline (ROGI index)
 rogi
 
-# Benchmark data (provides the 30 ChEMBL activity-cliff datasets):
-#   pip install MoleculeACE
-#
-# To rebuild the Word manuscript you also need Node.js and the docx package:
-#   npm install -g docx
+# 30-target MoleculeACE benchmark: data + activity-cliff labels + fixed splits
+MoleculeACE

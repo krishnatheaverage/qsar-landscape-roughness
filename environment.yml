@@ -1,0 +1,21 @@
+# Conda environment for reproducing the published results.
+#   conda env create -f environment.yml
+#   conda activate qsar-landscape-roughness
+# rogi and MoleculeACE are pip-only; install them after activating (see pip block).
+name: qsar-landscape-roughness
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - numpy=2.3.3
+  - pandas=2.3.3
+  - scipy=1.17.1
+  - matplotlib=3.10.6
+  - scikit-learn=1.8.0
+  - statsmodels=0.14.4
+  - rdkit=2026.03
+  - pip
+  - pip:
+      - torch==2.12.0
+      - rogi
+      - MoleculeACE

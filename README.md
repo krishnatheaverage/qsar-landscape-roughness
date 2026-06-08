@@ -53,25 +53,33 @@ A CPU-only PyTorch is sufficient for the graph-network experiments.
 
 ## Reproducing the results
 
-Heavy steps cache per-target intermediates to disk, so they can be run incrementally. Logical order:
+**One command** runs the whole pipeline (descriptors → statistics → every figure and table → both PDFs):
+
+```bash
+./reproduce.sh
+```
+
+Heavy steps cache per-target intermediates to disk and skip work already done, so the script is safe to re-run. To run stages individually, in logical order:
 
 ```bash
 python src/build_features.py all        # roughness descriptors + RF error per target -> cache/
 python src/analyze.py                   # -> results/all_per_compound.csv, tableA, tableB
 python src/gnn.py all                   # fixed-schedule GIN errors -> cache_gnn/
 python src/gnn_tuned.py all             # validated/early-stopped GIN errors -> cache_gnn2/
-python src/analyze_gnn.py               # -> gnn_fixed_vs_tuned.csv, gnn figure
-python src/robustness.py all            # k / metric sweep -> robustness caches
-python src/robustness_analyze.py        # -> robustness_summary.csv, robustness figure
+python src/analyze_gnn.py               # -> gnn_fixed_vs_tuned.csv, Figure 5
+python src/robustness.py ecfp4          # k-sweep under ECFP4/Tanimoto  -> cache
+python src/robustness.py ecfp6          # k-sweep under ECFP6/Tanimoto  -> cache
+python src/robustness.py desc           # k-sweep under descriptor/Euclidean -> cache
+python src/robustness_analyze.py        # -> robustness_summary.csv, Figure 3
 python src/model2.py all                # gradient boosting + SVR errors -> cache_models/
 python src/model_agnostic_analyze.py    # -> model_agnostic_results.csv (Table 1)
 python src/cross_domain.py              # ESOL + Lipophilicity -> cross_domain_results.csv
-python src/enrichment.py                # triage/enrichment -> figure
 python src/make_figure1.py              # main three-panel figure (Figure 1)
+python src/enrichment.py                # triage/enrichment (Figure 2)
 python src/make_figure4.py              # cross-domain validation figure (Figure 4)
 python src/toc_graphic.py               # ACS table-of-contents graphic
 python src/make_si_tables.py            # -> results/per_target_correlations.csv + paper/si_tables.tex
-python src/conformal.py                 # cliff-aware conformal intervals -> conformal_results.csv, Figure 6
+python src/conformal.py                 # roughness-conditioned conformal intervals -> conformal_results.csv, Figure 6
 ```
 
 **Paths and configuration.** All input and output locations are defined in `src/config.py` relative to the repository root, so the pipeline runs from a fresh checkout with no path editing. The MoleculeACE benchmark directory is located automatically from the installed package, and `cross_domain.py` downloads the two MoleculeNet CSVs on first run. You can override any location with environment variables (`QSAR_CACHE`, `QSAR_RESULTS`, `QSAR_FIGURES`, `QSAR_DATA`, `MOLECULEACE_DATA`). Cached per-target intermediates are written to `cache/` (gitignored) and regenerated on demand.

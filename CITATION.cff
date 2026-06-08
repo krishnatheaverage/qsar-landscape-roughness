@@ -8,13 +8,16 @@ abstract: >-
   opposite to) the classical applicability domain. Includes the full
   analysis pipeline, results, figures, and manuscript.
 type: software
+version: "1.0.0"
 authors:
   - family-names: Harish
     given-names: Krishna
     affiliation: "Elkins High School, Missouri City, Texas, United States"
     email: krishnaharish2009@gmail.com
-date-released: "2026-06-07"
+date-released: "2026-06-08"
 license: MIT
+# After archiving the v1.0.0 release on Zenodo, add the minted DOI here, e.g.:
+# doi: "10.5281/zenodo.XXXXXXXX"
 keywords:
   - activity cliffs
   - QSAR
