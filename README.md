@@ -66,9 +66,10 @@ python src/robustness.py all            # k / metric sweep -> robustness caches
 python src/robustness_analyze.py        # -> robustness_summary.csv, robustness figure
 python src/model2.py all                # gradient boosting + SVR errors -> cache_models/
 python src/model_agnostic_analyze.py    # -> model_agnostic_results.csv (Table 1)
-python src/cross_domain.py              # ESOL + Lipophilicity -> cross_domain_results.csv, figure
+python src/cross_domain.py              # ESOL + Lipophilicity -> cross_domain_results.csv
 python src/enrichment.py                # triage/enrichment -> figure
-python src/make_figure1.py              # main three-panel figure
+python src/make_figure1.py              # main three-panel figure (Figure 1)
+python src/make_figure4.py              # cross-domain validation figure (Figure 4)
 python src/toc_graphic.py               # ACS table-of-contents graphic
 python src/make_si_tables.py            # -> results/per_target_correlations.csv + paper/si_tables.tex
 ```
