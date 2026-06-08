@@ -2,7 +2,6 @@
 
 This repository contains the full data-analysis pipeline, results, figures, and manuscript for a study showing that a **per-compound, structure-only measure of local structure-activity landscape roughness predicts where a QSAR model will make large errors**, and that this signal is statistically distinct from (and for activity cliffs, opposite to) the classical applicability domain.
 
-Author: Krishna Harish (Elkins High School). Correspondence: krishnaharish2009@gmail.com
 
 ## Overview
 
