@@ -1,6 +1,6 @@
 cff-version: 1.2.0
 message: "If you use this software or its results, please cite it as below."
-title: "Local Structure-Activity Landscape Roughness Predicts Per-Compound QSAR Error Independently of the Applicability Domain"
+title: "Structure-Activity Landscape Roughness Predicts Per-Compound QSAR Error Independently of the Applicability Domain"
 abstract: >-
   A per-compound, structure-only measure of local structure-activity
   landscape roughness that predicts where a QSAR model will make large
@@ -25,7 +25,7 @@ keywords:
   - machine-learning reliability
 preferred-citation:
   type: article
-  title: "Local Structure-Activity Landscape Roughness Predicts Per-Compound QSAR Error Independently of the Applicability Domain"
+  title: "Structure-Activity Landscape Roughness Predicts Per-Compound QSAR Error Independently of the Applicability Domain"
   authors:
     - family-names: Harish
       given-names: Krishna

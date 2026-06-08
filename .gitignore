@@ -16,3 +16,14 @@ xdata/
 *.pdf
 manuscript.json
 node_modules/
+
+# LaTeX aux files
+*.aux
+*.log
+*.out
+*.bbl
+*.blg
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz

@@ -1,6 +1,6 @@
-# Local Structure-Activity Landscape Roughness Predicts Per-Compound QSAR Error
+# Structure–Activity Landscape Roughness Predicts Per-Compound QSAR Error Independently of the Applicability Domain
 
-This repository contains the full data-analysis pipeline, results, figures, and manuscript for a study showing that a **per-compound, structure-only measure of local structure-activity landscape roughness predicts where a QSAR model will make large errors**, and that this signal is statistically distinct from (and for activity cliffs, opposite to) the classical applicability domain.
+This repository contains the full data-analysis pipeline, results, figures, and the LaTeX manuscript for a study showing that a **per-compound, structure-only measure of local structure-activity landscape roughness predicts where a QSAR model will make large errors**, and that this signal is statistically distinct from (and for activity cliffs, opposite to) the classical applicability domain.
 
 
 ## Overview
@@ -27,10 +27,10 @@ qsar-landscape-roughness/
   LICENSE
   CITATION.cff
   .gitignore
-  src/          analysis pipeline and document-build scripts
+  src/          analysis pipeline and figure/table scripts
   src/config.py central path configuration (repo-relative, env-overridable)
   results/      aggregated result tables (CSV)
-  paper/        manuscript (Markdown + Word) and reviewer memo
+  paper/        LaTeX manuscript (main.tex) + supporting information, and reviewer memo
   paper/figures/ all figures and the table-of-contents graphic
 ```
 
@@ -46,8 +46,8 @@ These datasets are redistributed under their own licenses by their original auth
 ```bash
 pip install -r requirements.txt
 pip install MoleculeACE          # provides the 30-target benchmark data
-# optional, only to rebuild the Word document:
-#   install Node.js, then:  npm install -g docx
+# to build the paper you need a LaTeX toolchain (TeX Live / MiKTeX / Overleaf),
+# or the self-contained `tectonic` engine.
 ```
 
 A CPU-only PyTorch is sufficient for the graph-network experiments.
@@ -70,13 +70,30 @@ python src/cross_domain.py              # ESOL + Lipophilicity -> cross_domain_r
 python src/enrichment.py                # triage/enrichment -> figure
 python src/make_figure1.py              # main three-panel figure
 python src/toc_graphic.py               # ACS table-of-contents graphic
-
-# rebuild the Word manuscript (optional):
-python src/prep_doc.py                  # manuscript.md -> manuscript.json
-node  src/build_docx.js                 # -> manuscript_JCIM.docx
+python src/make_si_tables.py            # -> results/per_target_correlations.csv + paper/si_tables.tex
 ```
 
 **Paths and configuration.** All input and output locations are defined in `src/config.py` relative to the repository root, so the pipeline runs from a fresh checkout with no path editing. The MoleculeACE benchmark directory is located automatically from the installed package, and `cross_domain.py` downloads the two MoleculeNet CSVs on first run. You can override any location with environment variables (`QSAR_CACHE`, `QSAR_RESULTS`, `QSAR_FIGURES`, `QSAR_DATA`, `MOLECULEACE_DATA`). Cached per-target intermediates are written to `cache/` (gitignored) and regenerated on demand.
+
+## Building the paper (LaTeX)
+
+The manuscript and supporting information are written in LaTeX under `paper/`:
+
+| File | Contents |
+|---|---|
+| `paper/main.tex` | the manuscript (article class, ACS-style references, self-contained bibliography — no `.bib`/biber needed) |
+| `paper/supporting_information.tex` | the SI (per-target tables, robustness sweep, GNN details) |
+| `paper/si_tables.tex` | per-target table bodies; regenerate with `python src/make_si_tables.py` |
+| `paper/figures/` | all figures + the TOC graphic |
+| `paper/Makefile` | build targets |
+
+```bash
+cd paper
+make            # builds main.pdf and supporting_information.pdf via latexmk
+make tectonic   # alternative: build both with the self-contained tectonic engine
+```
+
+Both documents also compile out of the box on Overleaf.
 
 ## Figure mapping
 
@@ -103,6 +120,7 @@ Filenames are descriptive; the manuscript numbers figures in order of appearance
 | `gnn_fixed_vs_tuned.csv` | Graph-network error and roughness-quartile gap, both training regimens |
 | `model_agnostic_results.csv` | Roughness-error correlation for RF, gradient boosting, and SVR |
 | `cross_domain_results.csv` | ESOL and Lipophilicity validation |
+| `per_target_correlations.csv` | Per-target Spearman of each descriptor vs error, partial (AD-controlled), and cliff fraction (SI Table S1) |
 
 ## Status and limitations
 
@@ -112,7 +130,7 @@ This is a complete, self-contained, fully in-silico study. Honest caveats: the a
 
 If you use this code or build on these results, please cite the manuscript (in preparation) and the underlying benchmark:
 
-> Harish, K. Local Structure-Activity Landscape Roughness Predicts Per-Compound QSAR Error Independently of the Applicability Domain. Manuscript, 2026.
+> Harish, K. Structure–Activity Landscape Roughness Predicts Per-Compound QSAR Error Independently of the Applicability Domain. Manuscript, 2026.
 >
 > van Tilborg, D.; Alenicheva, A.; Grisoni, F. Exposing the Limitations of Molecular Machine Learning with Activity Cliffs. *J. Chem. Inf. Model.* 2022, 62 (23), 5938-5951.
 
