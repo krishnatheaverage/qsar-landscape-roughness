@@ -11,12 +11,11 @@ This work defines a small family of **local roughness descriptors** computed fro
 
 ## Key findings
 
-1. Local landscape roughness predicts per-compound random-forest error on all 30 bioactivity targets (Dirichlet energy median Spearman rho = 0.65).
-2. The signal survives control for the applicability domain in partial-correlation and mixed-effects analyses, so it is a distinct axis of reliability rather than a proxy for data sparsity.
-3. An activity-free descriptor (the pairwise-SALI density of a compound's neighbors) flags labeled activity cliffs with median ROC-AUC 0.69, whereas nearest-neighbor similarity is oriented the opposite way because cliffs cluster among close analogs.
-4. The relationship holds across three model classes (random forest, gradient boosting, SVR) and is robust to neighborhood size and distance metric.
-5. In a triage setting, ranking predictions by roughness recovers the activity cliffs that uncertainty- and applicability-domain flags miss.
-6. The relationship replicates on two non-bioactivity benchmarks (aqueous solubility and lipophilicity).
+1. An **activity-free** descriptor computable before any assay (the pairwise-SALI density of a compound's training neighbors) predicts per-compound random-forest error on all 30 targets and flags labeled activity cliffs with median ROC-AUC 0.69, entirely from structure.
+2. It is **distinct from the applicability domain**: the signal survives partial-correlation and mixed-effects control for nearest-neighbor similarity and local density, and for cliffs the two are opposed (nearest-neighbor similarity points the wrong way, because cliffs cluster among close analogs).
+3. A landscape measure that uses the query's **own activity** correlates more strongly (Dirichlet energy median Spearman rho = 0.65), but it is a mechanistic **upper bound, not deployable**: computing it needs the potency being predicted.
+4. **Conformal payoff:** used as the nonconformity scale of a conformal predictor, the descriptor restores 90% prediction-interval coverage on activity cliffs that standard intervals miss (87% → 91%), at a modest 15% median width cost; applicability-domain scaling makes cliff coverage worse.
+5. The effects are modest but consistent on every target, hold across three model classes (random forest, gradient boosting, SVR), are robust to neighborhood size and distance metric, and replicate on two non-bioactivity benchmarks (aqueous solubility and lipophilicity).
 
 ## Repository structure
 
@@ -72,6 +71,7 @@ python src/make_figure1.py              # main three-panel figure (Figure 1)
 python src/make_figure4.py              # cross-domain validation figure (Figure 4)
 python src/toc_graphic.py               # ACS table-of-contents graphic
 python src/make_si_tables.py            # -> results/per_target_correlations.csv + paper/si_tables.tex
+python src/conformal.py                 # cliff-aware conformal intervals -> conformal_results.csv, Figure 6
 ```
 
 **Paths and configuration.** All input and output locations are defined in `src/config.py` relative to the repository root, so the pipeline runs from a fresh checkout with no path editing. The MoleculeACE benchmark directory is located automatically from the installed package, and `cross_domain.py` downloads the two MoleculeNet CSVs on first run. You can override any location with environment variables (`QSAR_CACHE`, `QSAR_RESULTS`, `QSAR_FIGURES`, `QSAR_DATA`, `MOLECULEACE_DATA`). Cached per-target intermediates are written to `cache/` (gitignored) and regenerated on demand.
@@ -107,6 +107,7 @@ Filenames are descriptive; the manuscript numbers figures in order of appearance
 | Figure 3 | `robustness_figure.png` |
 | Figure 4 | `figure4_crossdomain.png` |
 | Figure 5 | `gnn_tuned_figure.png` |
+| Figure 6 | `figure6_conformal.png` |
 | TOC graphic | `TOC_graphic.png` |
 
 ## Result tables
@@ -122,6 +123,7 @@ Filenames are descriptive; the manuscript numbers figures in order of appearance
 | `model_agnostic_results.csv` | Roughness-error correlation for RF, gradient boosting, and SVR |
 | `cross_domain_results.csv` | ESOL and Lipophilicity validation |
 | `per_target_correlations.csv` | Per-target Spearman of each descriptor vs error, partial (AD-controlled), and cliff fraction (SI Table S1) |
+| `conformal_results.csv` | 90% conformal interval coverage on cliffs vs non-cliffs, by nonconformity scaling (Figure 6) |
 
 ## Status and limitations
 
