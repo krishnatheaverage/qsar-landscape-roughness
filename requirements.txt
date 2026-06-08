@@ -1,0 +1,22 @@
+# Core scientific stack
+numpy>=1.26
+pandas>=2.0
+scipy>=1.11
+scikit-learn>=1.3
+matplotlib>=3.7
+statsmodels>=0.14
+
+# Cheminformatics
+rdkit>=2023.3
+
+# Graph-network experiments (CPU build is sufficient)
+torch>=2.0
+
+# Global roughness baseline (ROGI)
+rogi
+
+# Benchmark data (provides the 30 ChEMBL activity-cliff datasets):
+#   pip install MoleculeACE
+#
+# To rebuild the Word manuscript you also need Node.js and the docx package:
+#   npm install -g docx
