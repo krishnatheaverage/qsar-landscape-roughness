@@ -1,0 +1,30 @@
+{
+  "upload_type": "software",
+  "title": "Structure-Activity Landscape Roughness Predicts Per-Compound QSAR Error Independently of the Applicability Domain",
+  "description": "Analysis pipeline, results, figures, and LaTeX manuscript for a study showing that a per-compound, structure-only measure of local structure-activity landscape roughness predicts where a QSAR model makes large errors, independently of the applicability domain, and that conditioning a conformal predictor on this roughness keeps prediction-interval coverage valid on activity cliffs.",
+  "creators": [
+    {
+      "name": "Harish, Krishna",
+      "affiliation": "Elkins High School, Missouri City, Texas, United States"
+    }
+  ],
+  "license": "MIT",
+  "access_right": "open",
+  "keywords": [
+    "activity cliffs",
+    "QSAR",
+    "structure-activity landscape",
+    "applicability domain",
+    "conformal prediction",
+    "uncertainty quantification",
+    "cheminformatics",
+    "machine-learning reliability"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "https://github.com/krishnatheaverage/qsar-landscape-roughness",
+      "relation": "isSupplementTo",
+      "scheme": "url"
+    }
+  ]
+}
