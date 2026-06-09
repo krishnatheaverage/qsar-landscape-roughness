@@ -16,8 +16,11 @@ authors:
     email: krishnaharish2009@gmail.com
 date-released: "2026-06-08"
 license: MIT
-# After archiving the v1.0.0 release on Zenodo, add the minted DOI here, e.g.:
-# doi: "10.5281/zenodo.XXXXXXXX"
+doi: "10.5281/zenodo.20603137"
+identifiers:
+  - type: doi
+    value: "10.5281/zenodo.20603136"
+    description: "Concept DOI (resolves to the latest version)"
 keywords:
   - activity cliffs
   - QSAR
