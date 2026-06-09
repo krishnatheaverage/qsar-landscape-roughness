@@ -11,11 +11,13 @@ This work defines a small family of **local roughness descriptors** computed fro
 
 ## Key findings
 
-1. An **activity-free** descriptor computable before any assay (the pairwise-SALI density of a compound's training neighbors) predicts per-compound random-forest error on all 30 targets and flags labeled activity cliffs with median ROC-AUC 0.69, entirely from structure.
-2. It is **distinct from the applicability domain**: the signal survives partial-correlation and mixed-effects control for nearest-neighbor similarity and local density, and for cliffs the two are opposed (nearest-neighbor similarity points the wrong way, because cliffs cluster among close analogs).
-3. A landscape measure that uses the query's **own activity** correlates more strongly (Dirichlet energy median Spearman rho = 0.65), but it is a mechanistic **upper bound, not deployable**: computing it needs the potency being predicted.
-4. **Conformal payoff:** used as the nonconformity scale of a conformal predictor, the descriptor restores 90% prediction-interval coverage on activity cliffs that standard intervals miss (87% → 91%), at a modest 15% median width cost; applicability-domain scaling makes cliff coverage worse.
-5. The effects are modest but consistent on every target, hold across three model classes (random forest, gradient boosting, SVR), are robust to neighborhood size and distance metric, and replicate on two non-bioactivity benchmarks (aqueous solubility and lipophilicity).
+1. **The per-compound reliability tools in use miss cliffs.** RF tree variance ranks general error well (flagging AUC 0.71) but is at chance on activity cliffs (0.52); the applicability domain is oriented backwards, since cliffs are dense, not sparse.
+2. **Structure-only local roughness is the missing signal, and the right per-compound scale for calibration.** A conformal predictor conditioned on roughness keeps 90% interval coverage flat across the roughness range and lifts cliff coverage toward nominal (87% → 90%), where conditioning on tree variance or the applicability domain leaves coverage falling with roughness and broken on cliffs.
+3. **Complementary, not competitive.** Variance ranks ordinary error, roughness ranks cliffs (AUC 0.69 vs variance's 0.52); a combined variance + roughness score inherits both and beats variance on cliffs on 29/30 targets.
+4. **Distinct from the applicability domain** (survives partial-correlation and mixed-effects control), **activity-free** and available before assay, holds across three model classes (RF, gradient boosting, SVR) and distance metrics, and replicates on aqueous solubility and lipophilicity.
+5. A landscape measure that uses the query's **own activity** correlates more strongly (Dirichlet energy median Spearman rho = 0.65) but is a mechanistic **upper bound, not deployable**: computing it needs the potency being predicted.
+
+Positioning: Sheridan (JCIM 2012) used per-compound RF tree variance and the prediction value as reliability signals, and the reliability-density-neighbourhood method (Aniceto et al., J. Cheminform. 2016) did per-instance local-neighbourhood reliability; both, like the applicability domain, are organized around proximity to the training data. The distinct claim here is the **activity-free local-roughness axis** and its **opposition to the applicability domain for cliffs**, the failure those proximity-based signals miss.
 
 ## Repository structure
 
@@ -79,7 +81,7 @@ python src/enrichment.py                # triage/enrichment (Figure 2)
 python src/make_figure4.py              # cross-domain validation figure (Figure 4)
 python src/toc_graphic.py               # ACS table-of-contents graphic
 python src/make_si_tables.py            # -> results/per_target_correlations.csv + paper/si_tables.tex
-python src/conformal.py                 # roughness-conditioned conformal intervals -> conformal_results.csv, Figure 6
+python src/conformal.py                 # risk-score complementarity + conditional conformal intervals -> conformal_results.csv, conformal_curve.csv, complementarity_results.csv, Figure 6, Table 2
 ```
 
 **Paths and configuration.** All input and output locations are defined in `src/config.py` relative to the repository root, so the pipeline runs from a fresh checkout with no path editing. The MoleculeACE benchmark directory is located automatically from the installed package, and `cross_domain.py` downloads the two MoleculeNet CSVs on first run. You can override any location with environment variables (`QSAR_CACHE`, `QSAR_RESULTS`, `QSAR_FIGURES`, `QSAR_DATA`, `MOLECULEACE_DATA`). Cached per-target intermediates are written to `cache/` (gitignored) and regenerated on demand.
@@ -131,7 +133,9 @@ Filenames are descriptive; the manuscript numbers figures in order of appearance
 | `model_agnostic_results.csv` | Roughness-error correlation for RF, gradient boosting, and SVR |
 | `cross_domain_results.csv` | ESOL and Lipophilicity validation |
 | `per_target_correlations.csv` | Per-target Spearman of each descriptor vs error, partial (AD-controlled), and cliff fraction (SI Table S1) |
-| `conformal_results.csv` | 90% conformal interval coverage on cliffs vs non-cliffs, by nonconformity scaling (Figure 6) |
+| `conformal_results.csv` | 90% conformal interval coverage (marginal / cliff / non-cliff) and width, by conditioning variable (variance, roughness, AD, combined) and construction (Figure 6, SI Table S4) |
+| `conformal_curve.csv` | conformal coverage vs local-roughness quantile, per conditioning variable (Figure 6A) |
+| `complementarity_results.csv` | flagging ROC-AUC of variance / roughness / combined on top-quartile error vs activity cliffs (Table 2) |
 
 ## Status and limitations
 

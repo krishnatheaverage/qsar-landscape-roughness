@@ -114,7 +114,7 @@ Target & $n$ & RF MAE & GNN (fixed-60) & GNN (tuned) & ROGI \\
 
 \section*{S4. Conformal prediction-interval coverage}
 
-90\% inductive-conformal prediction intervals were built from the held-out per-compound residuals (main-text Methods). For each target the test compounds were split at random into equal calibration and evaluation halves. Coverage was made conditional on a per-compound variable in two standard ways: a locally-weighted (normalized) nonconformity score $|\hat{y}_i - y_i|/\sigma(x_i)$, and a Mondrian scheme that stratifies calibration into quintiles of the variable and calibrates within each. The conditioning variable was an activity-free roughness (the pairwise-SALI density) or the applicability domain ($1 - s_{\mathrm{NN}}$). Every variant keeps the marginal coverage guarantee; they differ in where the coverage lands. Table~\ref{tab:conformal} reports the median across the 30 targets over 50 random splits. Conditioning on roughness restores activity-cliff coverage toward the nominal level at a small width cost; conditioning on the applicability domain lowers it. The same pattern holds across the full roughness range, not only on the labeled-cliff subset: standard coverage falls monotonically from 0.95 in the smoothest roughness quintile to 0.87 in the roughest, roughness-Mondrian holds it within two points of nominal across all quintiles, and applicability-domain conditioning declines further (main-text Figure~6A; \texttt{results/conformal\_curve.csv}).
+90\% inductive-conformal prediction intervals were built from the held-out per-compound residuals (main-text Methods). For each target the test compounds were split at random into equal calibration and evaluation halves. Coverage was made conditional on a per-compound variable in two standard ways: a locally-weighted (normalized) nonconformity score $|\hat{y}_i - y_i|/\sigma(x_i)$, and a Mondrian scheme that stratifies calibration into quintiles of the variable and calibrates within each. The conditioning variable was the random-forest tree variance, the activity-free roughness (pairwise-SALI density), the applicability domain ($1 - s_{\mathrm{NN}}$), or the combined variance-plus-roughness score. Every variant keeps the marginal coverage guarantee; they differ in where the coverage lands (Table~\ref{tab:conformal}, median across the 30 targets over 50 random splits). Conditioning on tree variance or the applicability domain leaves activity-cliff coverage at or below the unconditional level; only roughness restores it toward nominal, and the combined score recovers most of it at no width cost. The same pattern holds across the full roughness range, not only on the labeled-cliff subset: unconditional coverage falls from 0.95 in the smoothest roughness quintile to 0.87 in the roughest, and variance- and applicability-domain-conditioning fall similarly, whereas roughness (or the combined score) holds it within two points of nominal across all quintiles (main-text Figure~6A; \texttt{results/conformal\_curve.csv}).
 
 \begin{table}[htbp]
 \centering
@@ -125,10 +125,12 @@ Target & $n$ & RF MAE & GNN (fixed-60) & GNN (tuned) & ROGI \\
 Construction (conditioning variable) & Marginal & Cliff & Non-cliff & Median width (rel.) \\
 \hline
 Standard (unconditional) & 0.904 & 0.872 & 0.920 & 1.00 \\
+Mondrian (tree variance) & 0.910 & 0.860 & 0.946 & 0.97 \\
+Mondrian (applicability domain) & 0.910 & 0.861 & 0.945 & 1.01 \\
+Mondrian (roughness, SALI) & 0.911 & 0.895 & 0.928 & 1.06 \\
+Mondrian (variance $+$ roughness) & 0.913 & 0.876 & 0.941 & 0.99 \\
 Locally-weighted (roughness, SALI) & 0.904 & 0.912 & 0.898 & 1.16 \\
 Locally-weighted (applicability domain) & 0.904 & 0.820 & 0.954 & 1.14 \\
-Mondrian (roughness, SALI) & 0.911 & 0.895 & 0.928 & 1.06 \\
-Mondrian (applicability domain) & 0.910 & 0.861 & 0.945 & 1.01 \\
 \hline
 \end{tabular}
 \end{table}
