@@ -1,34 +1,21 @@
-\documentclass[12pt,letterpaper]{article}
+\documentclass[journal=jcisd8,manuscript=article]{achemso}
 
-% Minimal package set: each supports content (equations, figures, citations,
-% the data-availability URL); geometry only sets page margins.
-\usepackage[margin=1in]{geometry}
-\usepackage{amsmath}            % displayed equations
-\usepackage{graphicx}          % figures
-\usepackage{url}               % data-availability URL
-\usepackage[superscript]{cite} % ACS-style superscript reference citations
+% achemso = official ACS class; journal=jcisd8 is J. Chem. Inf. Model.
+\usepackage{amsmath}   % displayed equations
+\usepackage{graphicx}  % figures
 \graphicspath{{figures/}}
-\pagestyle{plain}
+
+\author{Krishna Harish}
+\affiliation{Elkins High School, Missouri City, Texas, United States}
+\email{krishnaharish2009@gmail.com}
+\title{Local Structure--Activity Landscape Roughness Predicts QSAR Error and Keeps Conformal Prediction Intervals Valid on Activity Cliffs}
+\keywords{activity cliffs, QSAR, structure--activity landscape, applicability domain, uncertainty quantification, machine-learning reliability}
 
 \begin{document}
 
-% title block
-\begin{center}
-  {\LARGE\bfseries Local Structure--Activity Landscape Roughness Predicts QSAR Error and Keeps Conformal Prediction Intervals Valid on Activity Cliffs\par}
-  \vspace{1.2em}
-  {\large Krishna Harish\textsuperscript{1}\par}
-  \vspace{0.7em}
-  {\itshape\textsuperscript{1}Elkins High School, Missouri City, Texas, United States\par}
-  \vspace{0.5em}
-  {*Email: krishnaharish2009@gmail.com\par}
-\end{center}
-\vspace{1em}
-
-\begin{center}\textbf{Abstract}\end{center}
-\noindent Machine-learning models of molecular potency fail on activity cliffs, structurally similar molecules with large potency differences, and the per-compound tools meant to flag unreliable predictions miss them: random-forest tree variance, the strongest general uncertainty signal, is no better than chance on cliffs, and the applicability domain (AD) is oriented backward, reporting high confidence in the dense regions where cliffs occur. We show that the missing signal is the local roughness of the structure--activity landscape, computable before assay from a compound's training neighbors without its own activity, and that it is the per-compound scale on which a prediction's interval reliability should be judged. Across thirty bioactivity benchmarks, conditioning a 90\% conformal predictor on tree variance or on the AD leaves interval coverage falling with local roughness and below nominal on activity cliffs; conditioning on roughness holds coverage flat across the roughness range and restores it on cliffs, for a few percent in interval width. Roughness complements rather than replaces uncertainty: a combined risk score keeps variance's ranking of ordinary error and adds the cliff sensitivity variance lacks, beating variance on cliffs on twenty-nine of thirty targets. The roughness signal is statistically distinct from the AD in partial-correlation and mixed-effects analyses, holds across three model classes and distance metrics, and reproduces on solubility and lipophilicity benchmarks. A related measure that uses the query's own activity tracks error more strongly (median Spearman 0.65) but cannot be computed before assay, bounding rather than providing the deployable signal. The result is a per-compound reliability estimate, available before assay, that keeps QSAR prediction intervals valid where models actually fail.
-
-\section*{Keywords}
-activity cliffs; QSAR; structure--activity landscape; applicability domain; uncertainty quantification; machine-learning reliability
+\begin{abstract}
+Machine-learning models of molecular potency fail on activity cliffs, structurally similar molecules with large potency differences, and the per-compound tools meant to flag unreliable predictions miss them: random-forest tree variance, the strongest general uncertainty signal, is no better than chance on cliffs, and the applicability domain (AD) is oriented backward, reporting high confidence in the dense regions where cliffs occur. We show that the missing signal is the local roughness of the structure--activity landscape, computable before assay from a compound's training neighbors without its own activity, and that it is the per-compound scale on which a prediction's interval reliability should be judged. Across thirty bioactivity benchmarks, conditioning a 90\% conformal predictor on tree variance or on the AD leaves interval coverage falling with local roughness and below nominal on activity cliffs; conditioning on roughness holds coverage flat across the roughness range and restores it on cliffs, for a few percent in interval width. Roughness complements rather than replaces uncertainty: a combined risk score keeps variance's ranking of ordinary error and adds the cliff sensitivity variance lacks, beating variance on cliffs on twenty-nine of thirty targets. The roughness signal is statistically distinct from the AD in partial-correlation and mixed-effects analyses, holds across three model classes and distance metrics, and reproduces on solubility and lipophilicity benchmarks. A related measure that uses the query's own activity tracks error more strongly (median Spearman 0.65) but cannot be computed before assay, bounding rather than providing the deployable signal. The result is a per-compound reliability estimate, available before assay, that keeps QSAR prediction intervals valid where models actually fail.
+\end{abstract}
 
 \section*{Introduction}
 
@@ -246,12 +233,11 @@ Several directions follow. We found the framework to transfer to physicochemical
 
 The bioactivity benchmark used in this work (30 ChEMBL targets with activity-cliff annotations and fixed train/test splits) is the publicly available MoleculeACE data set.\cite{vantilborg2022} The external physicochemical benchmarks (ESOL aqueous solubility and Lipophilicity) are distributed publicly with MoleculeNet.\cite{delaney2004,wu2018} All analysis code, the derived per-compound descriptor and error tables, and scripts that regenerate every figure and table in this article are openly available in a public repository (\url{https://github.com/krishnatheaverage/qsar-landscape-roughness}), with a single \texttt{reproduce.sh} entry point and a pinned environment. A frozen snapshot of the repository at the version used for this submission (v1.0.0) is archived on Zenodo (DOI: \texttt{10.5281/zenodo.20603137}). No proprietary or access-restricted data were used.
 
-\subsection*{Supporting Information}
+\begin{suppinfo}
 
-The Supporting Information is available free of charge.
-\begin{itemize}
-\item Per-target Spearman correlations between each roughness descriptor and per-compound error, applicability-domain partial correlations, and activity-cliff fractions for all 30 benchmark targets; full robustness tables across neighborhood size and molecular distance metric; extended graph-network architecture and training details with per-target errors; and conformal prediction-interval coverage by conditioning variable (tree variance, roughness, applicability domain, combined) and construction (PDF)
-\end{itemize}
+Per-target Spearman correlations between each roughness descriptor and per-compound error, applicability-domain partial correlations, and activity-cliff fractions for all 30 benchmark targets; full robustness tables across neighborhood size and molecular distance metric; extended graph-network architecture and training details with per-target errors; and conformal prediction-interval coverage by conditioning variable (tree variance, roughness, applicability domain, combined) and construction (PDF).
+
+\end{suppinfo}
 
 \section*{Author Information}
 
@@ -265,9 +251,11 @@ The author declares no competing financial interest.
 
 The author received no specific funding for this work.
 
-\section*{Acknowledgements}
+\begin{acknowledgement}
 
 The author thanks the developers of RDKit and scikit-learn, and the maintainers of the MoleculeACE and MoleculeNet benchmarks, for making their software and data openly available.
+
+\end{acknowledgement}
 
 \begin{thebibliography}{99}
 
@@ -333,11 +321,8 @@ The author thanks the developers of RDKit and scikit-learn, and the maintainers 
 
 \end{thebibliography}
 
-\clearpage
-\section*{For Table of Contents Use Only}
-\vspace{1em}
-\begin{center}
-\includegraphics[width=9cm]{TOC_graphic.png}
-\end{center}
+\begin{tocentry}
+\includegraphics[width=\linewidth]{TOC_graphic.png}
+\end{tocentry}
 
 \end{document}

@@ -32,3 +32,9 @@ node_modules/
 *.fls
 *.fdb_latexmk
 *.synctex.gz
+
+# achemso/tectonic build artifacts
+paper/acs-*.bib
+paper/*.aux
+paper/*.log
+paper/*.out
