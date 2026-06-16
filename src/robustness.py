@@ -67,7 +67,7 @@ def dist_test_train(te_smiles, tr_smiles):
         return cdist(Xte, Xtr, "euclidean")
 
 rows = []
-for f in sorted(os.listdir(CACHE)):
+for f in sorted(x for x in os.listdir(CACHE) if x.endswith(".csv") and not x.startswith("robustness")):
     name = f[:-4]
     cache = pd.read_csv(os.path.join(CACHE, name + ".csv"))   # test rows in order: y, rf_err, cliff_mol
     df = pd.read_csv(os.path.join(DATADIR, name + ".csv"))

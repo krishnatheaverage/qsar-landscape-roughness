@@ -9,7 +9,7 @@ from scipy.stats import spearmanr, wilcoxon
 df = pd.read_csv(os.path.join(RESULTS_DIR, "all_per_compound.csv"))  # has fixed-60 gnn_err
 # pull in the tuned gnn_err (cache_gnn2, same sorted order as cache)
 tuned = []
-for f in sorted(os.listdir(CACHE_DIR)):
+for f in sorted(x for x in os.listdir(CACHE_DIR) if x.endswith(".csv") and not x.startswith("robustness")):
     tuned.append(pd.read_csv(os.path.join(CACHE_GNN2, f)))
 tuned = pd.concat(tuned, ignore_index=True)
 assert len(tuned) == len(df) and (tuned.smiles.values == df.smiles.values).mean() == 1.0, "alignment!"

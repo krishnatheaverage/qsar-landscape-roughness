@@ -25,7 +25,7 @@ OUT = RESULTS_DIR
 
 # load + merge (rows are already in the same order)
 frames = []
-for f in sorted(os.listdir(CACHE)):
+for f in sorted(x for x in os.listdir(CACHE) if x.endswith(".csv") and not x.startswith("robustness")):
     d = pd.read_csv(os.path.join(CACHE, f))
     g = pd.read_csv(os.path.join(CACHE_GNN, f))
     assert len(d) == len(g)

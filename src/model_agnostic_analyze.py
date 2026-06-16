@@ -15,7 +15,7 @@ def partial(x, y, Z):
     return np.corrcoef(rx, ry)[0, 1]
 
 rows = []
-for f in sorted(os.listdir("cache")):
+for f in sorted(x for x in os.listdir("cache") if x.endswith(".csv") and not x.startswith("robustness")):
     c = pd.read_csv(os.path.join("cache", f)); m = pd.read_csv(os.path.join("cache_models", f))
     c["gbt_err"] = m.gbt_err.values; c["svr_err"] = m.svr_err.values; rows.append(c)
 df = pd.concat(rows, ignore_index=True)

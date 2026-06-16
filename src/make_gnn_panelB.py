@@ -40,7 +40,8 @@ add("fixed-60", "gap_fixed", df, "data")
 have_cache = os.path.isdir(CACHE_GNN2) and len(os.listdir(CACHE_GNN2)) > 0
 if have_cache:
     tuned = pd.concat([pd.read_csv(os.path.join(CACHE_GNN2, f))
-                       for f in sorted(os.listdir(CACHE_DIR))], ignore_index=True)
+                       for f in sorted(x for x in os.listdir(CACHE_DIR) if x.endswith(".csv") and not x.startswith("robustness"))],
+                      ignore_index=True)
     assert len(tuned) == len(df) and (tuned.smiles.values == df.smiles.values).mean() == 1.0
     df["gap_tuned"] = tuned.gnn_err.values - df["rf_err"].values
     add("tuned", "gap_tuned", df, "data")
