@@ -3,7 +3,7 @@
 % achemso = official ACS class; journal=jcisd8 is J. Chem. Inf. Model.
 \usepackage{amsmath}   % displayed equations
 \usepackage{graphicx}  % figures
-\usepackage{setspace}  % single spacing (overrides achemso manuscript double-spacing)
+\usepackage{setspace}  % explicit double-spacing (ACS submission default)
 \graphicspath{{figures/}}
 
 \author{Krishna Harish}
@@ -13,7 +13,7 @@
 \keywords{activity cliffs, QSAR, structure--activity landscape, applicability domain, uncertainty quantification, machine-learning reliability}
 
 \begin{document}
-\singlespacing
+\doublespacing
 
 \begin{abstract}
 Machine-learning models of molecular potency fail on activity cliffs, structurally similar molecules with large potency differences, and the per-compound tools meant to flag unreliable predictions miss them: random-forest tree variance, the strongest general uncertainty signal, is no better than chance on cliffs, and the applicability domain (AD) is oriented backward, reporting high confidence in the dense regions where cliffs occur. We show that the missing signal is the local roughness of the structure--activity landscape, computable before assay from a compound's training neighbors without its own activity, and that it is the per-compound scale on which a prediction's interval reliability should be judged. Across thirty bioactivity benchmarks, conditioning a 90\% conformal predictor on tree variance or on the AD leaves interval coverage falling with local roughness and below nominal on activity cliffs; conditioning on roughness holds coverage flat across the roughness range and restores it on cliffs, for a few percent in interval width. Roughness complements rather than replaces uncertainty: a combined risk score keeps variance's ranking of ordinary error and adds the cliff sensitivity variance lacks, beating variance on cliffs on twenty-nine of thirty targets. The roughness signal is statistically distinct from the AD in partial-correlation and mixed-effects analyses, holds across three model classes and distance metrics, and reproduces on solubility and lipophilicity benchmarks. A related measure that uses the query's own activity tracks error more strongly (median Spearman 0.65) but cannot be computed before assay, bounding rather than providing the deployable signal. The result is a per-compound reliability estimate, available before assay, that keeps QSAR prediction intervals valid where models actually fail.
