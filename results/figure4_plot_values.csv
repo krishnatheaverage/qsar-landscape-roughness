@@ -1,0 +1,13 @@
+panel,panel_label,group,group_order,series,value
+A,Landscape roughness (Dirichlet),Bioactivity (30-target median),0,zero-order,0.654493817547596
+A,Landscape roughness (Dirichlet),Bioactivity (30-target median),0,partial|AD,0.6430922434625104
+B,Activity-free roughness (nbr dispersion),Bioactivity (30-target median),0,zero-order,0.2748452908829465
+B,Activity-free roughness (nbr dispersion),Bioactivity (30-target median),0,partial|AD,0.2297001869037339
+A,Landscape roughness (Dirichlet),ESOL (solubility),1,zero-order,0.5961805257754733
+A,Landscape roughness (Dirichlet),ESOL (solubility),1,partial|AD,0.6012507873976048
+B,Activity-free roughness (nbr dispersion),ESOL (solubility),1,zero-order,0.1681568558234757
+B,Activity-free roughness (nbr dispersion),ESOL (solubility),1,partial|AD,0.1940142866054843
+A,Landscape roughness (Dirichlet),Lipophilicity (logD),2,zero-order,0.6671276259097386
+A,Landscape roughness (Dirichlet),Lipophilicity (logD),2,partial|AD,0.6371976429363637
+B,Activity-free roughness (nbr dispersion),Lipophilicity (logD),2,zero-order,0.1978867642349975
+B,Activity-free roughness (nbr dispersion),Lipophilicity (logD),2,partial|AD,0.0727772272101732

@@ -1,0 +1,81 @@
+panel,method,frac,recall
+A  Catching high-error predictions,roughness (nbr_disp),0.05,0.09915516644347801
+A  Catching high-error predictions,roughness (nbr_disp),0.1,0.17864280624227147
+A  Catching high-error predictions,roughness (nbr_disp),0.15000000000000002,0.2579904697127745
+A  Catching high-error predictions,roughness (nbr_disp),0.2,0.3340979602672874
+A  Catching high-error predictions,roughness (nbr_disp),0.25,0.3943985859736273
+A  Catching high-error predictions,roughness (nbr_disp),0.30000000000000004,0.4544197506803626
+A  Catching high-error predictions,roughness (nbr_disp),0.35000000000000003,0.5213412123638793
+A  Catching high-error predictions,roughness (nbr_disp),0.4,0.5852866007662723
+A  Catching high-error predictions,roughness (nbr_disp),0.45,0.6323619598002315
+A  Catching high-error predictions,roughness (nbr_disp),0.5,0.6851695513404705
+A  Catching high-error predictions,applicability domain,0.05,0.10312790836580432
+A  Catching high-error predictions,applicability domain,0.1,0.1812031080473278
+A  Catching high-error predictions,applicability domain,0.15000000000000002,0.25265233795978653
+A  Catching high-error predictions,applicability domain,0.2,0.324040052296733
+A  Catching high-error predictions,applicability domain,0.25,0.3872266329120669
+A  Catching high-error predictions,applicability domain,0.30000000000000004,0.4470062488945376
+A  Catching high-error predictions,applicability domain,0.35000000000000003,0.49872378909376636
+A  Catching high-error predictions,applicability domain,0.4,0.5530201849618697
+A  Catching high-error predictions,applicability domain,0.45,0.5971560409436459
+A  Catching high-error predictions,applicability domain,0.5,0.6420583094145227
+A  Catching high-error predictions,uncertainty (RF var),0.05,0.122952818061813
+A  Catching high-error predictions,uncertainty (RF var),0.1,0.21384336378692803
+A  Catching high-error predictions,uncertainty (RF var),0.15000000000000002,0.3027761431399617
+A  Catching high-error predictions,uncertainty (RF var),0.2,0.37964638705317705
+A  Catching high-error predictions,uncertainty (RF var),0.25,0.45107417496671215
+A  Catching high-error predictions,uncertainty (RF var),0.30000000000000004,0.5113574943188295
+A  Catching high-error predictions,uncertainty (RF var),0.35000000000000003,0.5736345926854167
+A  Catching high-error predictions,uncertainty (RF var),0.4,0.6294700387161428
+A  Catching high-error predictions,uncertainty (RF var),0.45,0.6825975828799058
+A  Catching high-error predictions,uncertainty (RF var),0.5,0.7268480638238451
+A  Catching high-error predictions,random,0.05,0.05673406034329178
+A  Catching high-error predictions,random,0.1,0.10515706015800592
+A  Catching high-error predictions,random,0.15000000000000002,0.1588293964635317
+A  Catching high-error predictions,random,0.2,0.20436576945600188
+A  Catching high-error predictions,random,0.25,0.25073537024227077
+A  Catching high-error predictions,random,0.30000000000000004,0.3031821317147348
+A  Catching high-error predictions,random,0.35000000000000003,0.351376246247784
+A  Catching high-error predictions,random,0.4,0.3974725699002922
+A  Catching high-error predictions,random,0.45,0.4488277308076245
+A  Catching high-error predictions,random,0.5,0.4992823954220518
+B  Catching activity cliffs,roughness (SALI-density),0.05,0.08258494773869332
+B  Catching activity cliffs,roughness (SALI-density),0.1,0.16366549587712217
+B  Catching activity cliffs,roughness (SALI-density),0.15000000000000002,0.24826646160592844
+B  Catching activity cliffs,roughness (SALI-density),0.2,0.3251729273374511
+B  Catching activity cliffs,roughness (SALI-density),0.25,0.3888940273868845
+B  Catching activity cliffs,roughness (SALI-density),0.30000000000000004,0.45294079636823026
+B  Catching activity cliffs,roughness (SALI-density),0.35000000000000003,0.5227153531042427
+B  Catching activity cliffs,roughness (SALI-density),0.4,0.5779134097449173
+B  Catching activity cliffs,roughness (SALI-density),0.45,0.6281908978681892
+B  Catching activity cliffs,roughness (SALI-density),0.5,0.6717632364886321
+B  Catching activity cliffs,applicability domain,0.05,0.0058506340362823464
+B  Catching activity cliffs,applicability domain,0.1,0.026358370585126658
+B  Catching activity cliffs,applicability domain,0.15000000000000002,0.05678134068532485
+B  Catching activity cliffs,applicability domain,0.2,0.09105742639997458
+B  Catching activity cliffs,applicability domain,0.25,0.13371211894659
+B  Catching activity cliffs,applicability domain,0.30000000000000004,0.18096889762594354
+B  Catching activity cliffs,applicability domain,0.35000000000000003,0.225501756279704
+B  Catching activity cliffs,applicability domain,0.4,0.284329126820844
+B  Catching activity cliffs,applicability domain,0.45,0.33139664454194195
+B  Catching activity cliffs,applicability domain,0.5,0.3838303962093158
+B  Catching activity cliffs,uncertainty (RF var),0.05,0.047662725866893255
+B  Catching activity cliffs,uncertainty (RF var),0.1,0.09471869354179911
+B  Catching activity cliffs,uncertainty (RF var),0.15000000000000002,0.1450203200082008
+B  Catching activity cliffs,uncertainty (RF var),0.2,0.20457971850246376
+B  Catching activity cliffs,uncertainty (RF var),0.25,0.2555568508159333
+B  Catching activity cliffs,uncertainty (RF var),0.30000000000000004,0.3091316995429658
+B  Catching activity cliffs,uncertainty (RF var),0.35000000000000003,0.3688195492579746
+B  Catching activity cliffs,uncertainty (RF var),0.4,0.4153361463464742
+B  Catching activity cliffs,uncertainty (RF var),0.45,0.46728722486624
+B  Catching activity cliffs,uncertainty (RF var),0.5,0.5181616919711863
+B  Catching activity cliffs,random,0.05,0.05579059850022164
+B  Catching activity cliffs,random,0.1,0.11546940564092913
+B  Catching activity cliffs,random,0.15000000000000002,0.16481508438665748
+B  Catching activity cliffs,random,0.2,0.22686924374279935
+B  Catching activity cliffs,random,0.25,0.2758627907123312
+B  Catching activity cliffs,random,0.30000000000000004,0.3290010883728346
+B  Catching activity cliffs,random,0.35000000000000003,0.38006581989710125
+B  Catching activity cliffs,random,0.4,0.42923853242887794
+B  Catching activity cliffs,random,0.45,0.4852095340990997
+B  Catching activity cliffs,random,0.5,0.5340696816846828

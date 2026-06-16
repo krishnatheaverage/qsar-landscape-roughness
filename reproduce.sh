@@ -40,6 +40,15 @@ $PY src/toc_graphic.py      # TOC graphic
 $PY src/make_si_tables.py   # SI Tables S1, S3
 echo "[12/13] roughness-conditioned conformal intervals -> Figure 6"
 $PY src/conformal.py
+echo "[12b/13] render publication figures in color-independent ggplot2 (R)"
+# The Python steps above also emit tidy plot-data CSVs (results/fig*.csv etc.);
+# these R scripts read them and write the final grayscale-safe figures.
+if command -v Rscript >/dev/null 2>&1; then
+  for r in fig1 fig2 fig3 fig4 fig6; do QSAR_ROOT="$PWD" Rscript "src/figures_R/$r.R"; done
+else
+  echo "  (Rscript not found; keeping the matplotlib figures. Install R with"
+  echo "   ggplot2/patchwork/ggrepel/readr/dplyr/tidyr for the publication figures.)"
+fi
 echo "[13/13] build manuscript + supporting information PDFs"
 cd paper
 if command -v latexmk >/dev/null 2>&1; then

@@ -54,6 +54,7 @@ scorers_cliff = [("roughness (SALI-density)", "sali_mean", 1, "#2166ac"),
 
 fig, ax = plt.subplots(1, 2, figsize=(12.5, 4.8))
 print("=== Recall of positives captured by flagging the top f% (avg over 30 targets) ===")
+_curve_rows = []  # for results/fig2_curves.csv : panel, method, frac, recall
 for axi, (title, scorers, posfn) in enumerate([
         ("A  Catching high-error predictions", scorers_err, highedge),
         ("B  Catching activity cliffs", scorers_cliff, cliffs)]):
@@ -63,6 +64,9 @@ for axi, (title, scorers, posfn) in enumerate([
         ax[axi].plot(FRACS*100, rc*100, "-o", ms=4, color=color, label=name)
         i20 = np.argmin(np.abs(FRACS - 0.20))
         print(f"  {name:26s} recall@20%flag = {rc[i20]*100:4.1f}%  (EF20 = {rc[i20]/0.20:.2f})")
+        for f, r in zip(FRACS, rc):
+            _curve_rows.append({"panel": title, "method": name,
+                                "frac": float(f), "recall": float(r)})
     ax[axi].plot([0,50],[0,50],"k:",lw=.7)
     ax[axi].set_xlabel("% of compounds flagged as low-confidence")
     ax[axi].set_ylabel("% of target compounds captured (recall)")
@@ -72,3 +76,8 @@ fig.suptitle("Operational triage: a structure-only roughness flag captures more 
              fontsize=11, weight="bold")
 plt.tight_layout(); plt.savefig(os.path.join(FIGURES_DIR, "figure5_enrichment.png"), dpi=160, bbox_inches="tight")
 print("\nfigure5_enrichment.png saved")
+
+# emit the curve values so the figure can be re-plotted (e.g. in R/ggplot2) without re-deriving stats
+_curve_csv = os.path.join(RESULTS_DIR, "fig2_curves.csv")
+pd.DataFrame(_curve_rows, columns=["panel", "method", "frac", "recall"]).to_csv(_curve_csv, index=False)
+print(f"{_curve_csv} saved ({len(_curve_rows)} rows)")

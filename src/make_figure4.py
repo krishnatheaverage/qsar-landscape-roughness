@@ -49,3 +49,19 @@ fig.suptitle("External validation: the roughness–error relationship replicates
 plt.tight_layout()
 plt.savefig(os.path.join(FIGURES_DIR, "figure4_crossdomain.png"), dpi=160, bbox_inches="tight")
 print("figure4_crossdomain.png saved")
+
+# tidy CSV of the exact plotted bar heights, so the R/ggplot2 port reads one clean
+# source that mirrors panel A/B bar-for-bar (no values re-derived downstream).
+group_labels = ["Bioactivity (30-target median)", "ESOL (solubility)", "Lipophilicity (logD)"]
+_rows = []
+for gi, glab in enumerate(group_labels):
+    _rows.append(dict(panel="A", panel_label="Landscape roughness (Dirichlet)",
+                      group=glab, group_order=gi, series="zero-order", value=dir_zero[gi]))
+    _rows.append(dict(panel="A", panel_label="Landscape roughness (Dirichlet)",
+                      group=glab, group_order=gi, series="partial|AD", value=dir_part[gi]))
+    _rows.append(dict(panel="B", panel_label="Activity-free roughness (nbr dispersion)",
+                      group=glab, group_order=gi, series="zero-order", value=disp_zero[gi]))
+    _rows.append(dict(panel="B", panel_label="Activity-free roughness (nbr dispersion)",
+                      group=glab, group_order=gi, series="partial|AD", value=disp_part[gi]))
+pd.DataFrame(_rows).to_csv(os.path.join(RESULTS_DIR, "figure4_plot_values.csv"), index=False)
+print("figure4_plot_values.csv saved")

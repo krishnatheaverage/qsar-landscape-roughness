@@ -1,0 +1,5 @@
+construct,label,family,zero_order,partial_AD
+dirichlet,Dirichlet*,landscape,0.654493817547596,0.6430922434625106
+lipschitz,Lipschitz/SALI*,landscape,0.4487620974422231,0.6033296381599109
+nbr_disp,nbr dispersion,a-priori,0.2748452908829465,0.22970018690373384
+sali_mean,SALI-density (mean),a-priori,0.16329661614317387,0.2338609787175733

@@ -106,19 +106,21 @@ make tectonic   # alternative: build both with the self-contained tectonic engin
 
 Both documents also compile out of the box on Overleaf.
 
-## Figure mapping
+## Figures
+
+Figures 1-4 and 6 are rendered in **color-independent ggplot2** (grayscale-distinguishable shades, line types, and point shapes, so they read in black-and-white) by the R scripts in `src/figures_R/`. The Python analysis scripts emit tidy plot-data CSVs (`results/fig1_panelA.csv`, `fig2_curves.csv`, `figure4_plot_values.csv`, `conformal_curve.csv`, `robustness_summary.csv`, ...); each R script reads the matching CSV, so the figures never re-derive statistics. Rendering needs R with `ggplot2`, `patchwork`, `ggrepel`, `readr`, `dplyr`, `tidyr`; `reproduce.sh` runs them after the Python steps (and falls back to the matplotlib figures if R is absent). Figure 5 (the graph-network supporting figure) is matplotlib, since its per-compound regeneration needs the GNN caches.
 
 Filenames are descriptive; the manuscript numbers figures in order of appearance:
 
-| Manuscript | File |
-|---|---|
-| Figure 1 | `figure1_main.png` |
-| Figure 2 | `figure5_enrichment.png` |
-| Figure 3 | `robustness_figure.png` |
-| Figure 4 | `figure4_crossdomain.png` |
-| Figure 5 | `gnn_tuned_figure.png` |
-| Figure 6 | `figure6_conformal.png` |
-| TOC graphic | `TOC_graphic.png` |
+| Manuscript | File | Rendered by |
+|---|---|---|
+| Figure 1 | `figure1_main.png` | `src/figures_R/fig1.R` (vertical 3-panel) |
+| Figure 2 | `figure5_enrichment.png` | `src/figures_R/fig2.R` |
+| Figure 3 | `robustness_figure.png` | `src/figures_R/fig3.R` |
+| Figure 4 | `figure4_crossdomain.png` | `src/figures_R/fig4.R` |
+| Figure 5 | `gnn_tuned_figure.png` | `src/analyze_gnn.py` (matplotlib) |
+| Figure 6 | `figure6_conformal.png` | `src/figures_R/fig6.R` |
+| TOC graphic | `TOC_graphic.png` | `src/toc_graphic.py` |
 
 ## Result tables
 

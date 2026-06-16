@@ -85,6 +85,39 @@ ax[2].set_xlabel("AUC for flagging labelled cliffs\n(median ± IQR)", fontsize=9
 ax[2].set_title("C  Flagging cliffs a-priori (no activity used)", fontsize=10.5, loc="left", weight="bold")
 plt.tight_layout(); plt.savefig(os.path.join(FIGURES_DIR, "figure1_main.png"), dpi=160, bbox_inches="tight")
 
+# ---- write the EXACT plotted values for the ggplot2 (R) re-make of this figure ----
+# Panel A: median Spearman rho vs RF error, with IQR, per descriptor, grouped by family.
+pd.DataFrame({
+    "descriptor": order,
+    "label": [LABEL[c] for c in order],
+    "family": [FAMILY[c] for c in order],
+    "median_rho": meds,
+    "q25": q1,
+    "q75": q3,
+    "ypos": list(np.arange(len(order))[::-1]),
+}).to_csv(os.path.join(RESULTS_DIR, "fig1_panelA.csv"), index=False)
+
+# Panel B: zero-order vs applicability-domain-controlled partial rho for the 4 constructs.
+pd.DataFrame({
+    "construct": constructs,
+    "label": [LABEL[c] for c in constructs],
+    "family": [FAMILY[c] for c in constructs],
+    "zero_order": z0,
+    "partial_AD": zp,
+}).to_csv(os.path.join(RESULTS_DIR, "fig1_panelB.csv"), index=False)
+
+# Panel C (== code's panel D): cliff-flagging ROC-AUC per descriptor, with IQR.
+pd.DataFrame({
+    "descriptor": flaggers,
+    "label": [LABEL[c] for c in flaggers],
+    "family": [FAMILY[c] for c in flaggers],
+    "median_auc": [float(np.median(aucs[c])) for c in flaggers],
+    "q25": [float(np.percentile(aucs[c], 25)) for c in flaggers],
+    "q75": [float(np.percentile(aucs[c], 75)) for c in flaggers],
+    "ypos": list(np.arange(len(flaggers))[::-1]),
+}).to_csv(os.path.join(RESULTS_DIR, "fig1_panelC.csv"), index=False)
+print("fig1_panelA/B/C.csv saved for the R/ggplot2 re-make")
+
 # numbers for the Results text
 cliff = df.cliff_mol.astype(bool)
 ratios = df.groupby("dataset").apply(lambda g: g[g.cliff_mol==1].rf_err.mean()/g[g.cliff_mol==0].rf_err.mean())
