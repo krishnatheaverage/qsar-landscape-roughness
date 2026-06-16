@@ -1,22 +1,22 @@
 cff-version: 1.2.0
 message: "If you use this software or its results, please cite it as below."
-title: "Structure-Activity Landscape Roughness Predicts Per-Compound QSAR Error Independently of the Applicability Domain"
+title: "Local Structure-Activity Landscape Roughness Predicts QSAR Error and Keeps Conformal Prediction Intervals Valid on Activity Cliffs"
 abstract: >-
-  A per-compound, structure-only measure of local structure-activity
+  A per-compound, activity-free measure of local structure-activity
   landscape roughness that predicts where a QSAR model will make large
   errors, and that is statistically distinct from (and for activity cliffs
   opposite to) the classical applicability domain. Includes the full
   analysis pipeline, results, figures, and manuscript.
 type: software
-version: "1.0.0"
+version: "1.1.0"
 authors:
   - family-names: Harish
     given-names: Krishna
     affiliation: "Elkins High School, Missouri City, Texas, United States"
     email: krishnaharish2009@gmail.com
-date-released: "2026-06-08"
+date-released: "2026-06-16"
 license: MIT
-doi: "10.5281/zenodo.20603137"
+doi: "10.5281/zenodo.20603136"
 identifiers:
   - type: doi
     value: "10.5281/zenodo.20603136"
@@ -31,7 +31,7 @@ keywords:
   - machine-learning reliability
 preferred-citation:
   type: article
-  title: "Structure-Activity Landscape Roughness Predicts Per-Compound QSAR Error Independently of the Applicability Domain"
+  title: "Local Structure-Activity Landscape Roughness Predicts QSAR Error and Keeps Conformal Prediction Intervals Valid on Activity Cliffs"
   authors:
     - family-names: Harish
       given-names: Krishna
