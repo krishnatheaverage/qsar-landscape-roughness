@@ -105,7 +105,7 @@ pB <- ggplot(Bl, aes(x = x, y = rho, group = series,
   scale_shape_manual(values = sh_vals, name = "construct") +
   scale_colour_manual(values = oi_vals, name = "construct") +
   labs(title = "Roughness survives the applicability-domain control",
-       x = NULL, y = expression("Spearman " * rho * " vs error")) +
+       x = NULL, y = expression("Spearman " * rho)) +
   base_theme +
   theme(legend.position = "none")
 
