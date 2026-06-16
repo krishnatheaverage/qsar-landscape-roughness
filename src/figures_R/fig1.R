@@ -65,7 +65,7 @@ pA <- ggplot(A, aes(x = median_rho, y = label, fill = family)) +
   geom_col(colour = "black", linewidth = 0.3, width = 0.72) +
   geom_errorbarh(aes(xmin = q25, xmax = q75), height = 0.28, colour = "black", linewidth = 0.4) +
   scale_fill_manual(values = FAM_GREY, drop = FALSE, name = "family") +
-  labs(title = "A  What predicts where QSAR errs",
+  labs(title = "What predicts where QSAR errs",
        x = expression("Spearman " * rho * " vs per-compound error (median ± IQR, 30 targets)"),
        y = NULL) +
   annotate("text", x = max(A$q75), y = 0.6, hjust = 1, vjust = 0, size = 3,
@@ -104,7 +104,7 @@ pB <- ggplot(Bl, aes(x = x, y = rho, group = series,
   scale_linetype_manual(values = lt_vals, name = "construct") +
   scale_shape_manual(values = sh_vals, name = "construct") +
   scale_colour_manual(values = oi_vals, name = "construct") +
-  labs(title = "B  Roughness survives the applicability-domain control",
+  labs(title = "Roughness survives the applicability-domain control",
        x = NULL, y = expression("Spearman " * rho * " vs error")) +
   base_theme +
   theme(legend.position = "none")
@@ -118,7 +118,7 @@ pC <- ggplot(Cc, aes(x = median_auc, y = label, fill = family)) +
   geom_errorbarh(aes(xmin = q25, xmax = q75), height = 0.28, colour = "black", linewidth = 0.4) +
   scale_fill_manual(values = FAM_GREY, drop = FALSE, name = "family") +
   coord_cartesian(xlim = c(0.3, 0.85)) +
-  labs(title = "C  Flagging cliffs a-priori (no activity used)",
+  labs(title = "Flagging cliffs a-priori (no activity used)",
        x = "AUC for flagging labelled cliffs (median ± IQR)", y = NULL) +
   base_theme +
   theme(legend.position = c(0.99, 0.04), legend.justification = c(1, 0),
