@@ -1,4 +1,4 @@
-"""make_figure1.py -- main Figure 1 (panels A, B, D) plus the numbers for the Results text."""
+# Builds Figure 1 (panels A, B, D) and prints the numbers used in the Results text.
 import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from config import ROOT, PAPER_DIR, DATA_DIR, CACHE_DIR, CACHE_GNN, CACHE_GNN2, CACHE_MODELS, RESULTS_DIR, FIGURES_DIR, benchmark_dir
@@ -36,7 +36,6 @@ def partial_spearman(x, y, Z):
 
 fig, ax = plt.subplots(1, 3, figsize=(16.5, 4.7))
 
-# Panel A
 order = ["dirichlet", "lipschitz", "rf_var", "nbr_disp", "sali_mean", "sali_max", "nn_sim", "local_dens", "holder"]
 meds = [np.median(per_target_rho(c)) for c in order]
 q1 = [np.percentile(per_target_rho(c), 25) for c in order]; q3 = [np.percentile(per_target_rho(c), 75) for c in order]
@@ -49,7 +48,6 @@ ax[0].set_title("A  What predicts where QSAR errs", fontsize=11, loc="left", wei
 ax[0].legend([plt.Rectangle((0,0),1,1,color=COL[k]) for k in COL], COL.keys(), fontsize=7.2, loc="lower right", frameon=False)
 ax[0].text(0.02, 0.02, "* uses the query's own activity", transform=ax[0].transAxes, fontsize=7, style="italic")
 
-# Panel B
 constructs = ["dirichlet", "lipschitz", "nbr_disp", "sali_mean"]
 z0, zp = [], []
 for c in constructs:
@@ -66,7 +64,6 @@ ax[1].set_xticks([0, 1]); ax[1].set_xticklabels(["zero-order ρ", "partial ρ\n(
 ax[1].set_xlim(-0.15, 1.8); ax[1].set_ylabel("Spearman ρ vs error", fontsize=9)
 ax[1].set_title("B  Roughness survives the applicability-domain control", fontsize=10.5, loc="left", weight="bold")
 
-# Panel D
 flaggers = ["sali_mean", "sali_max", "nbr_disp", "holder", "rf_var", "nn_sim"]
 aucs = {}
 for c in flaggers:
@@ -85,8 +82,6 @@ ax[2].set_xlabel("AUC for flagging labelled cliffs\n(median ± IQR)", fontsize=9
 ax[2].set_title("C  Flagging cliffs a-priori (no activity used)", fontsize=10.5, loc="left", weight="bold")
 plt.tight_layout(); plt.savefig(os.path.join(FIGURES_DIR, "figure1_main.png"), dpi=160, bbox_inches="tight")
 
-# ---- write the EXACT plotted values for the ggplot2 (R) re-make of this figure ----
-# Panel A: median Spearman rho vs RF error, with IQR, per descriptor, grouped by family.
 pd.DataFrame({
     "descriptor": order,
     "label": [LABEL[c] for c in order],
@@ -97,7 +92,6 @@ pd.DataFrame({
     "ypos": list(np.arange(len(order))[::-1]),
 }).to_csv(os.path.join(RESULTS_DIR, "fig1_panelA.csv"), index=False)
 
-# Panel B: zero-order vs applicability-domain-controlled partial rho for the 4 constructs.
 pd.DataFrame({
     "construct": constructs,
     "label": [LABEL[c] for c in constructs],
@@ -106,7 +100,6 @@ pd.DataFrame({
     "partial_AD": zp,
 }).to_csv(os.path.join(RESULTS_DIR, "fig1_panelB.csv"), index=False)
 
-# Panel C (== code's panel D): cliff-flagging ROC-AUC per descriptor, with IQR.
 pd.DataFrame({
     "descriptor": flaggers,
     "label": [LABEL[c] for c in flaggers],
@@ -118,7 +111,6 @@ pd.DataFrame({
 }).to_csv(os.path.join(RESULTS_DIR, "fig1_panelC.csv"), index=False)
 print("fig1_panelA/B/C.csv saved for the R/ggplot2 re-make")
 
-# numbers for the Results text
 cliff = df.cliff_mol.astype(bool)
 ratios = df.groupby("dataset").apply(lambda g: g[g.cliff_mol==1].rf_err.mean()/g[g.cliff_mol==0].rf_err.mean())
 per_t_higher = df.groupby("dataset").apply(lambda g: g[g.cliff_mol==1].rf_err.mean() > g[g.cliff_mol==0].rf_err.mean())

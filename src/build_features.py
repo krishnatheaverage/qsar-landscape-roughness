@@ -1,33 +1,4 @@
-"""
-build_features.py  --  main feature pipeline (everything except the GNN).
-
-for each MoleculeACE target: train an RF on the train split, then for every test
-molecule compute a bunch of per-compound numbers from its nearest training neighbours.
-
-landscape roughness (uses the query's own activity y_i):
-    dirichlet   : sim-weighted mean squared activity gap
-    lipschitz   : max |dy| / (1 - tanimoto)   (aggregated SALI)
-
-a-priori roughness (no query y needed, so usable at predict time):
-    nbr_disp    : std of the k nearest neighbours' activities
-    sali_max    : max pairwise SALI among the query's k neighbours
-    sali_mean   : mean of those
-    highsim_disp: std of activities for neighbours with tanimoto >= 0.9 (MMP-ish)
-    holder      : local Holder exponent of the training landscape
-                  (slope of log|dy| vs log d over neighbour pairs; low = rough)
-
-AD controls (the stuff we need to beat):
-    nn_sim      : max tanimoto to any training mol (1 = sitting on the training data)
-    local_dens  : mean of the k nearest sims
-    mol_size    : heavy-atom count
-
-targets:
-    rf_err      : |pred - y|
-    rf_var      : variance across the trees (uncertainty baseline)
-
-cached to cache/<dataset>.csv (test rows only).
-usage:  python3 build_features.py DATASET1 DATASET2 ...   |   python3 build_features.py all
-"""
+# Feature pipeline: per-compound landscape-roughness, a-priori, and AD features from RF + neighbours.
 import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from config import ROOT, PAPER_DIR, DATA_DIR, CACHE_DIR, CACHE_GNN, CACHE_GNN2, CACHE_MODELS, RESULTS_DIR, FIGURES_DIR, benchmark_dir
@@ -40,9 +11,9 @@ np.random.seed(0)
 
 DATADIR = benchmark_dir()
 CACHE = CACHE_DIR; os.makedirs(CACHE, exist_ok=True)
-K = 10            # neighbours for dispersion / SALI / dirichlet / lipschitz
-K_HOLDER = 25     # bigger neighbourhood for the holder slope fit
-HIGHSIM = 0.9     # MMP-ish similarity cutoff
+K = 10
+K_HOLDER = 25
+HIGHSIM = 0.9
 _gen = rdFingerprintGenerator.GetMorganGenerator(radius=2, fpSize=2048)
 
 def featurize(smiles):
@@ -56,7 +27,6 @@ def featurize(smiles):
     return fps, np.array(arrs), np.array(sizes), np.array(ok)
 
 def holder_exponent(neigh_fps, neigh_y):
-    """slope of log|dy| vs log(dist) over all pairs in the neighbour set."""
     n = len(neigh_fps)
     if n < 4: return np.nan
     logd, logdy = [], []
@@ -67,7 +37,7 @@ def holder_exponent(neigh_fps, neigh_y):
             if d > 1e-3 and dy > 1e-6:
                 logd.append(np.log(d)); logdy.append(np.log(dy))
     if len(logd) < 4: return np.nan
-    return float(np.polyfit(logd, logdy, 1)[0])   # slope = the exponent
+    return float(np.polyfit(logd, logdy, 1)[0])
 
 def process(name):
     out = os.path.join(CACHE, name + ".csv")
@@ -82,7 +52,7 @@ def process(name):
     tr_y = tr.y.values; te_y = te.y.values
 
     rf = RandomForestRegressor(n_estimators=200, max_features="sqrt", n_jobs=-1, random_state=0).fit(tr_X, tr_y)
-    tree_preds = np.stack([t.predict(te_X) for t in rf.estimators_])   # [n_trees, n_te]
+    tree_preds = np.stack([t.predict(te_X) for t in rf.estimators_])
     pred = tree_preds.mean(0); rf_var = tree_preds.var(0)
     rf_err = np.abs(pred - te_y)
 
@@ -97,7 +67,6 @@ def process(name):
         dirichlet = float(np.sum(w * dy**2) / np.sum(w))
         lipschitz = float(np.max(dy / np.clip(1 - s_nn, 1e-3, None)))
         nbr_disp = float(np.std(y_nn))
-        # pairwise SALI among the k neighbours (doesn't touch the query's y)
         sali_vals = []
         for a in range(len(nn)):
             sims_a = np.array(DataStructs.BulkTanimotoSimilarity(tr_fps[nn[a]], [tr_fps[j] for j in nn]))

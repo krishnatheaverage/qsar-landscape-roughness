@@ -1,9 +1,4 @@
-"""
-gnn_tuned.py [all|DATASET...] -- retrain the GIN properly so undertraining isn't the
-reason behind panel C. 10% val split, keep the best checkpoint on val MSE with early
-stopping, dropout in the head. saves per-compound test error to cache_gnn2/<dataset>.csv,
-aligned to cache/.
-"""
+# Retrains GIN with val split, early stopping, dropout; saves per-compound test error to cache_gnn2/.
 import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from config import ROOT, PAPER_DIR, DATA_DIR, CACHE_DIR, CACHE_GNN, CACHE_GNN2, CACHE_MODELS, RESULTS_DIR, FIGURES_DIR, benchmark_dir
@@ -72,14 +67,12 @@ def run(name):
     keep = [i for i, g in enumerate(g_all) if g is not None]
     g_all = [g_all[i] for i in keep]; y_all = y_all[keep]
     te_g = [mol_graph(s) for s in cache.smiles]; te_y = cache.y.values
-    # 10% validation split
     idx = np.random.permutation(len(g_all)); nval = max(8, len(g_all)//10)
     vi, ti = idx[:nval], idx[nval:]
     mu, sd = y_all[ti].mean(), y_all[ti].std() + 1e-9
     model = GIN(g_all[0][0].shape[1]); opt = torch.optim.Adam(model.parameters(), lr=LR)
     sched = torch.optim.lr_scheduler.ReduceLROnPlateau(opt, factor=0.5, patience=8)
     lossf = nn.MSELoss()
-    # bucket batches by size to cut padding; reshuffle the batch order each epoch
     ti_sorted = ti[np.argsort([g_all[i][0].shape[0] for i in ti])]
     batches = [ti_sorted[s:s+BS] for s in range(0, len(ti_sorted), BS)]
     best_val, best_state, wait = 1e9, None, 0

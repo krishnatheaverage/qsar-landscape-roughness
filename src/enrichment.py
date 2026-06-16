@@ -1,19 +1,4 @@
-"""
-enrichment.py -- is a structure-only roughness flag actually useful for triage?
-
-if you flag the top f% of predictions as low-confidence, how many of the problem
-compounds do you catch, and how does roughness stack up against the usual signals?
-
-two things to catch (per target, then averaged over the 30):
-  - high-error compounds : top-quartile RF error
-  - labelled activity cliffs
-
-risk scores (higher = flagged first), each pointed the right way:
-  - roughness  : nbr_disp (high-error) / sali_mean (cliffs)   [y-free]
-  - AD         : -nn_sim  (low similarity = risky)
-  - uncertainty: rf_var
-  - random     : shuffled
-"""
+# Triage evaluation: recall curves comparing roughness flags vs AD, uncertainty, random baselines.
 import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from config import ROOT, PAPER_DIR, DATA_DIR, CACHE_DIR, CACHE_GNN, CACHE_GNN2, CACHE_MODELS, RESULTS_DIR, FIGURES_DIR, benchmark_dir
@@ -25,7 +10,6 @@ df = pd.read_csv(os.path.join(RESULTS_DIR, "all_per_compound.csv"))
 FRACS = np.arange(0.05, 0.51, 0.05)
 
 def recall_curve(score_col, sign, pos_mask_fn):
-    """avg recall vs fraction flagged, over targets; risk = sign*column."""
     curves = []
     for _, g in df.groupby("dataset"):
         pos = pos_mask_fn(g)
@@ -34,7 +18,7 @@ def recall_curve(score_col, sign, pos_mask_fn):
             risk = np.random.rand(len(g))
         else:
             risk = sign * g[score_col].values
-        order = np.argsort(-risk)  # most-risky first
+        order = np.argsort(-risk)
         pos_ord = pos.values[order]
         rec = [pos_ord[:max(1, int(round(f*len(g))))].sum() / pos.sum() for f in FRACS]
         curves.append(rec)
@@ -54,7 +38,7 @@ scorers_cliff = [("roughness (SALI-density)", "sali_mean", 1, "#2166ac"),
 
 fig, ax = plt.subplots(1, 2, figsize=(12.5, 4.8))
 print("=== Recall of positives captured by flagging the top f% (avg over 30 targets) ===")
-_curve_rows = []  # for results/fig2_curves.csv : panel, method, frac, recall
+_curve_rows = []
 for axi, (title, scorers, posfn) in enumerate([
         ("A  Catching high-error predictions", scorers_err, highedge),
         ("B  Catching activity cliffs", scorers_cliff, cliffs)]):
@@ -77,7 +61,6 @@ fig.suptitle("Operational triage: a structure-only roughness flag captures more 
 plt.tight_layout(); plt.savefig(os.path.join(FIGURES_DIR, "figure5_enrichment.png"), dpi=160, bbox_inches="tight")
 print("\nfigure5_enrichment.png saved")
 
-# emit the curve values so the figure can be re-plotted (e.g. in R/ggplot2) without re-deriving stats
 _curve_csv = os.path.join(RESULTS_DIR, "fig2_curves.csv")
 pd.DataFrame(_curve_rows, columns=["panel", "method", "frac", "recall"]).to_csv(_curve_csv, index=False)
 print(f"{_curve_csv} saved ({len(_curve_rows)} rows)")

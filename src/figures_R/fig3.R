@@ -1,16 +1,5 @@
 #!/usr/bin/env Rscript
-# fig3.R -- color-independent ggplot2 version of manuscript Figure 3 (robustness).
-#
-# Reproduces src/robustness_analyze.py's matplotlib figure:
-#   3 panels (local_var, nbr_disp, nbr_disp|AD) of median Spearman rho vs RF error
-#   plotted against neighbourhood size k, for 3 series
-#   (ECFP4/Tanimoto, ECFP6/Tanimoto, RDKit-desc/Euclidean).
-#
-# The plotted values ARE the columns of results/robustness_summary.csv, which the
-# Python script writes from the very same DataFrame it plots. We read that CSV
-# directly -- no statistics are re-derived in R.
-#
-# Output: paper/figures/robustness_figure.png  (filename referenced by the manuscript).
+# Color-independent ggplot2 version of manuscript Figure 3 (robustness).
 
 suppressPackageStartupMessages({
   library(ggplot2)
@@ -20,7 +9,6 @@ suppressPackageStartupMessages({
   library(patchwork)
 })
 
-# ---- resolve repo root relative to this script, so it runs from a fresh clone ----
 args <- commandArgs(trailingOnly = FALSE)
 file_arg <- sub("^--file=", "", args[grep("^--file=", args)])
 script_path <- if (length(file_arg) == 1) normalizePath(file_arg) else NA
@@ -34,16 +22,13 @@ csv_path <- file.path(root, "results", "robustness_summary.csv")
 png_path <- file.path(root, "paper", "figures", "robustness_figure.png")
 stopifnot(file.exists(csv_path))
 
-# ---- load the precomputed summary ----
 R <- read_csv(csv_path, show_col_types = FALSE)
 
-# series factor with the same display names + order as the matplotlib NAME dict
 metric_levels <- c("ecfp4", "ecfp6", "desc")
 metric_names  <- c(ecfp4 = "ECFP4 / Tanimoto",
                    ecfp6 = "ECFP6 / Tanimoto",
                    desc  = "RDKit desc / Euclidean")
 
-# long form: one row per (metric, k, panel)
 long <- R %>%
   rename(`local_var` = local_var,
          `nbr_disp` = nbr_disp,
@@ -57,13 +42,12 @@ long <- R %>%
     panel  = factor(panel, levels = c("local_var", "nbr_disp", "nbr_disp | AD"))
   )
 
-k_breaks <- sort(unique(R$k))  # 5 10 15 20 30
+k_breaks <- sort(unique(R$k))
 
-# grayscale-safe + Okabe-Ito encodings (one entry per series, in display order)
 series_levels <- levels(long$series)
-lty_vals   <- c("solid", "22", "dotted")            # distinct linetypes
-shape_vals <- c(16, 17, 15)                          # circle, triangle, square
-oi_cols    <- c("#000000", "#0072B2", "#D55E00")     # Okabe-Ito (ADDITION only)
+lty_vals   <- c("solid", "22", "dotted")
+shape_vals <- c(16, 17, 15)
+oi_cols    <- c("#000000", "#0072B2", "#D55E00")
 names(lty_vals) <- names(shape_vals) <- names(oi_cols) <- series_levels
 
 panel_titles <- c(
@@ -79,7 +63,6 @@ base_theme <- theme_bw(base_size = 13) +
         legend.position = "bottom",
         legend.key.width = unit(1.6, "lines"))
 
-# shared y range across panels (matplotlib used sharey=True)
 y_rng <- range(c(0, long$rho), na.rm = TRUE)
 
 make_panel <- function(panel_key, show_y = FALSE) {

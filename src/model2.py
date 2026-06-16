@@ -1,8 +1,4 @@
-"""
-model2.py [all|DATASET...] -- two more model types for the model-agnostic check.
-trains HistGradientBoosting and SVR(RBF) on ECFP4 per target, records the per-compound
-test error aligned to cache/<target>.csv. out: cache_models/<target>.csv [smiles, gbt_err, svr_err].
-"""
+# Trains HistGradientBoosting and SVR(RBF) on ECFP4 per target; writes per-compound test errors.
 import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from config import ROOT, PAPER_DIR, DATA_DIR, CACHE_DIR, CACHE_GNN, CACHE_GNN2, CACHE_MODELS, RESULTS_DIR, FIGURES_DIR, benchmark_dir

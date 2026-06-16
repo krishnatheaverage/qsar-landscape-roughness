@@ -1,9 +1,4 @@
-r"""
-make_si_tables.py -- per-target numbers for the Supporting Information.
-reads results/all_per_compound.csv (+ the global-index and gnn tables) and writes
-results/per_target_correlations.csv, plus the LaTeX table bodies the SI \input's.
-run after analyze.py / analyze_gnn.py have produced the result CSVs.
-"""
+# Computes per-target correlation numbers and emits LaTeX table bodies for the SI.
 import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from config import RESULTS_DIR, PAPER_DIR
@@ -43,7 +38,6 @@ out = pd.DataFrame(rows).sort_values("target").reset_index(drop=True)
 out.to_csv(os.path.join(RESULTS_DIR, "per_target_correlations.csv"), index=False)
 print("wrote per_target_correlations.csv,", len(out), "targets")
 
-# --- emit LaTeX rows so the SI tables stay in sync with the data ---
 def f(x, d=2):
     return "--" if pd.isna(x) else f"{x:.{d}f}"
 tgt = lambda s: s.replace("_", r"\_")

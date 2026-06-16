@@ -1,10 +1,4 @@
-"""make_figure4.py -- cross-domain validation figure (Figure 4).
-grouped bars of zero-order vs AD-controlled partial Spearman, for the landscape
-Dirichlet energy (panel A) and the activity-free neighbour dispersion (panel B),
-across the 30-target bioactivity median and the two MoleculeNet physchem sets.
-reads cross_domain_results.csv (ESOL + Lipophilicity) and tableA/tableB for the
-bioactivity medians, so run after cross_domain.py and analyze.py.
-"""
+# Builds Figure 4: zero-order vs AD-controlled partial Spearman across bioactivity and physchem sets.
 import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from config import RESULTS_DIR, FIGURES_DIR
@@ -18,7 +12,6 @@ B  = pd.read_csv(os.path.join(RESULTS_DIR, "tableB_partial_AD.csv")).set_index("
 esol, lipo = "ESOL (logS solubility)", "Lipophilicity (logD)"
 groups = ["Bioactivity\n(30-target median)", "ESOL\n(solubility)", "Lipophilicity\n(logD)"]
 
-# panel A: landscape Dirichlet energy; panel B: activity-free neighbour dispersion
 dir_zero  = [A.loc["dirichlet", "median_rho"], cd.loc[esol, "rho_dirichlet"], cd.loc[lipo, "rho_dirichlet"]]
 dir_part  = [B.loc["dirichlet", "partial_AD"], cd.loc[esol, "partial_dir_AD"], cd.loc[lipo, "partial_dir_AD"]]
 disp_zero = [A.loc["nbr_disp", "median_rho"],  cd.loc[esol, "rho_nbr_disp"],  cd.loc[lipo, "rho_nbr_disp"]]
@@ -50,8 +43,6 @@ plt.tight_layout()
 plt.savefig(os.path.join(FIGURES_DIR, "figure4_crossdomain.png"), dpi=160, bbox_inches="tight")
 print("figure4_crossdomain.png saved")
 
-# tidy CSV of the exact plotted bar heights, so the R/ggplot2 port reads one clean
-# source that mirrors panel A/B bar-for-bar (no values re-derived downstream).
 group_labels = ["Bioactivity (30-target median)", "ESOL (solubility)", "Lipophilicity (logD)"]
 _rows = []
 for gi, glab in enumerate(group_labels):

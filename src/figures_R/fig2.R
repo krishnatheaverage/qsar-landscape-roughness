@@ -1,15 +1,5 @@
 #!/usr/bin/env Rscript
-# fig2.R -- color-independent ggplot2 version of manuscript Figure 2
-# (saved as paper/figures/figure5_enrichment.png to match the manuscript reference).
-#
-# Reproduces src/enrichment.py exactly: two panels of recall (% target compounds
-# captured) vs % of compounds flagged as low-confidence, 4 series each
-# (roughness, applicability domain, uncertainty/RF variance, random).
-# All plotted values are read from results/fig2_curves.csv, which is emitted by
-# `python3 src/enrichment.py` -- no statistics are re-derived here.
-#
-# Every series is distinguished by BOTH linetype and point shape so the figure
-# stays unambiguous in pure grayscale; Okabe-Ito color is added only for screen.
+# Grayscale-safe ggplot2 reproduction of manuscript Figure 2 enrichment curves.
 
 suppressPackageStartupMessages({
   library(ggplot2)
@@ -18,7 +8,6 @@ suppressPackageStartupMessages({
   library(patchwork)
 })
 
-# --- locate repo root relative to this script -------------------------------
 args <- commandArgs(trailingOnly = FALSE)
 file_arg <- sub("^--file=", "", args[grep("^--file=", args)])
 script_dir <- if (length(file_arg)) normalizePath(dirname(file_arg)) else getwd()
@@ -30,9 +19,6 @@ stopifnot(file.exists(csv_path))
 
 curves <- read_csv(csv_path, show_col_types = FALSE)
 
-# --- tidy labels (keep the same content/order as enrichment.py) -------------
-# Panel titles in the CSV carry the "A "/"B " prefix from matplotlib; map to
-# clean facet-style titles. patchwork's tag_levels="A" supplies the A/B tags.
 panel_levels <- c(
   "A  Catching high-error predictions" = "Catching high-error predictions",
   "B  Catching activity cliffs"        = "Catching activity cliffs"
@@ -44,10 +30,6 @@ curves <- curves %>%
     recall_pct  = recall * 100
   )
 
-# Series order = order they appear in enrichment.py's scorer lists.
-# "roughness" covers both nbr_disp (panel A) and SALI-density (panel B): it is
-# the structure-only flag, so we collapse the two roughness labels into one
-# legend entry "roughness (structure)" while keeping the per-panel values.
 series_recode <- function(m) {
   dplyr::case_when(
     grepl("^roughness", m)        ~ "roughness (structure)",
@@ -62,16 +44,14 @@ series_order <- c("roughness (structure)", "applicability domain",
 curves <- curves %>%
   mutate(series = factor(series_recode(method), levels = series_order))
 
-# --- encodings: linetype + shape (grayscale-safe) + Okabe-Ito (screen) ------
 lt_vals  <- c("roughness (structure)" = "solid",
               "applicability domain"  = "22",
               "uncertainty (RF var)"  = "dotted",
               "random"                = "dotdash")
-sh_vals  <- c("roughness (structure)" = 16,   # filled circle
-              "applicability domain"  = 17,   # filled triangle
-              "uncertainty (RF var)"  = 15,   # filled square
-              "random"                = 4)     # cross
-# Okabe-Ito subset (added only on top of the grayscale-safe encoding)
+sh_vals  <- c("roughness (structure)" = 16,
+              "applicability domain"  = 17,
+              "uncertainty (RF var)"  = 15,
+              "random"                = 4)
 col_vals <- c("roughness (structure)" = "#0072B2",
               "applicability domain"  = "#000000",
               "uncertainty (RF var)"  = "#009E73",
@@ -92,7 +72,6 @@ base_theme <- theme_bw(base_size = 13) +
 make_panel <- function(d, ptitle) {
   ggplot(d, aes(frac_pct, recall_pct,
                 linetype = series, shape = series, colour = series)) +
-    # diagonal reference line (random expectation), as in enrichment.py
     geom_abline(slope = 1, intercept = 0, linetype = "dotted",
                 colour = "grey55", linewidth = 0.4) +
     geom_line(linewidth = 0.7) +
@@ -127,9 +106,7 @@ combined <- (pA + pB) +
 W <- 10; H <- 5.4
 ggsave(png_path, combined, width = W, height = H, dpi = 300)
 
-# --- report -----------------------------------------------------------------
 cat(sprintf("wrote %s\n", png_path))
-# read PNG pixel dims straight from the IHDR chunk (no extra package needed)
 con <- file(png_path, "rb"); on.exit(close(con))
 raw_hdr <- readBin(con, "raw", n = 24)
 pxw <- sum(as.integer(raw_hdr[17:20]) * 256^(3:0))

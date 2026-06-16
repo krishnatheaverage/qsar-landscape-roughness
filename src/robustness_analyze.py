@@ -1,4 +1,4 @@
-"""robustness_analyze.py -- is the main correlation stable across k and distance metric?"""
+# Robustness analysis: is the main correlation stable across k and distance metric?
 import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from config import ROOT, PAPER_DIR, DATA_DIR, CACHE_DIR, CACHE_GNN, CACHE_GNN2, CACHE_MODELS, RESULTS_DIR, FIGURES_DIR, benchmark_dir

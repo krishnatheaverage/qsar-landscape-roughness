@@ -1,30 +1,18 @@
 #!/usr/bin/env Rscript
-# fig1.R -- color-independent (grayscale-safe) ggplot2 re-make of manuscript Figure 1.
-#
-# Reproduces the EXACT content/numbers of src/make_figure1.py, panels A, B, C, but
-#   (1) stacks the three panels VERTICALLY (patchwork A / B / C, each full text-width)
-#       so the panel-B construct labels no longer overlap, and
-#   (2) encodes every series by GRAYSCALE shade + linetype + point shape, never hue alone,
-#       so the figure survives a grayscale print.
-#
-# Plotted values are read from results/fig1_panelA.csv, fig1_panelB.csv, fig1_panelC.csv,
-# which are written by src/make_figure1.py (run `python3 src/make_figure1.py` first).
+# Grayscale-safe ggplot2 re-make of manuscript Figure 1 (panels A, B, C stacked vertically).
 
 suppressPackageStartupMessages({
   library(ggplot2); library(readr); library(dplyr); library(tidyr)
   library(patchwork); library(ggrepel)
 })
 
-# ---- paths ----
-# Prefer QSAR_ROOT env var; else derive from --file= (script is src/figures_R/fig1.R,
-# so repo root is two levels up); else fall back to the current working directory.
 ROOT <- Sys.getenv("QSAR_ROOT", "")
 if (!nzchar(ROOT)) {
   args <- commandArgs(trailingOnly = FALSE)
   file_arg <- sub("^--file=", "", args[grep("^--file=", args)])
   if (length(file_arg) && nzchar(file_arg)) {
     fa <- if (startsWith(file_arg, "/")) file_arg else file.path(getwd(), file_arg)
-    ROOT <- dirname(dirname(dirname(fa)))   # .../src/figures_R/fig1.R -> repo root
+    ROOT <- dirname(dirname(dirname(fa)))
   } else {
     ROOT <- getwd()
   }
@@ -34,17 +22,14 @@ FIGURES  <- file.path(ROOT, "paper", "figures")
 dir.create(FIGURES, showWarnings = FALSE, recursive = TRUE)
 PNG_PATH <- file.path(FIGURES, "figure1_main.png")
 
-# Plotted values come from results/ (written by make_figure1.py).
 read_panel <- function(name) read_csv(file.path(RESULTS, name), show_col_types = FALSE)
 A  <- read_panel("fig1_panelA.csv")
 B  <- read_panel("fig1_panelB.csv")
 Cc <- read_panel("fig1_panelC.csv")
 
-# ---- shared style ----
 FAM_LEVELS <- c("landscape", "a-priori", "applicability domain", "uncertainty")
 FAM_GREY   <- c("landscape" = "grey20", "a-priori" = "grey45",
                 "applicability domain" = "grey68", "uncertainty" = "grey85")
-# Okabe-Ito accents (ADDITION only; grayscale shade above carries the meaning)
 FAM_OI <- c("landscape" = "#000000", "a-priori" = "#0072B2",
             "applicability domain" = "#999999", "uncertainty" = "#009E73")
 
@@ -57,9 +42,7 @@ base_theme <- theme_bw(base_size = 13) +
 A$family <- factor(A$family, levels = FAM_LEVELS)
 Cc$family <- factor(Cc$family, levels = FAM_LEVELS)
 
-# ========================= Panel A =========================
-# Horizontal bars of median Spearman rho vs RF error, IQR error bars, grouped by family.
-A <- A %>% arrange(ypos) %>% mutate(label = factor(label, levels = label))  # ypos sets vertical order
+A <- A %>% arrange(ypos) %>% mutate(label = factor(label, levels = label))
 pA <- ggplot(A, aes(x = median_rho, y = label, fill = family)) +
   geom_vline(xintercept = 0, colour = "black", linewidth = 0.4) +
   geom_col(colour = "black", linewidth = 0.3, width = 0.72) +
@@ -75,9 +58,6 @@ pA <- ggplot(A, aes(x = median_rho, y = label, fill = family)) +
         legend.background = element_rect(fill = alpha("white", 0.7), colour = NA),
         legend.key.size = unit(0.9, "lines"))
 
-# ========================= Panel B =========================
-# Slope / line plot of zero-order vs AD-controlled partial rho for the 4 constructs.
-# Long form with an ordered x factor; labels nudged via ggrepel so NONE overlap.
 Bl <- B %>%
   pivot_longer(c(zero_order, partial_AD), names_to = "stage", values_to = "rho") %>%
   mutate(stage = factor(stage, levels = c("zero_order", "partial_AD"),
@@ -109,8 +89,6 @@ pB <- ggplot(Bl, aes(x = x, y = rho, group = series,
   base_theme +
   theme(legend.position = "none")
 
-# ========================= Panel C =========================
-# Horizontal bars of cliff-flagging ROC-AUC per descriptor, IQR error bars.
 Cc <- Cc %>% arrange(ypos) %>% mutate(label = factor(label, levels = label))
 pC <- ggplot(Cc, aes(x = median_auc, y = label, fill = family)) +
   geom_vline(xintercept = 0.5, colour = "black", linewidth = 0.6, linetype = "dashed") +
@@ -125,7 +103,6 @@ pC <- ggplot(Cc, aes(x = median_auc, y = label, fill = family)) +
         legend.background = element_rect(fill = alpha("white", 0.7), colour = NA),
         legend.key.size = unit(0.9, "lines"))
 
-# ========================= stack VERTICALLY =========================
 fig <- pA / pB / pC +
   plot_annotation(tag_levels = "A") &
   theme(plot.tag = element_text(face = "bold", size = 14))

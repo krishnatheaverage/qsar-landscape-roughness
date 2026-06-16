@@ -1,19 +1,5 @@
 #!/usr/bin/env Rscript
-# fig6.R -- color-independent (grayscale-safe) ggplot2 rebuild of manuscript Figure 6.
-#
-# Faithful port of the matplotlib figure produced by src/conformal.py.
-# Panel A: 90% interval coverage vs local-roughness quintile (Q1 smooth .. Q5 rough)
-#          for 4 conditioning variables (unconditional / tree variance / applicability
-#          domain / roughness), with a dashed nominal-0.90 line.
-# Panel B: bars of activity-cliff coverage for 5 conditionings
-#          (none / variance / AD / roughness / variance+roughness), with the 0.90 line.
-#
-# Data sources (already emitted by src/conformal.py; values are NOT re-derived here):
-#   results/conformal_curve.csv   -> method, qbin, cov           (Panel A line values)
-#   results/conformal_results.csv -> method, cliff_cov, ...       (Panel B bar heights)
-#
-# Every series is distinguished by BOTH linetype and point shape (Panel A) and by a
-# distinct grayscale fill (Panel B), so the figure survives grayscale printing.
+# Grayscale-safe ggplot2 rebuild of manuscript Figure 6 (conformal coverage panels).
 
 suppressPackageStartupMessages({
   library(ggplot2)
@@ -23,7 +9,6 @@ suppressPackageStartupMessages({
   library(patchwork)
 })
 
-# ---- paths (repo root = two levels up from this script) ----
 args <- commandArgs(trailingOnly = FALSE)
 this_file <- sub("^--file=", "", args[grep("^--file=", args)])
 if (length(this_file) == 0) this_file <- "src/figures_R/fig6.R"
@@ -33,7 +18,6 @@ FIG_DIR     <- file.path(ROOT, "paper", "figures")
 dir.create(FIG_DIR, showWarnings = FALSE, recursive = TRUE)
 png_path <- file.path(FIG_DIR, "figure6_conformal.png")
 
-# ---- shared style ----
 okabe_ito <- c("#000000", "#E69F00", "#56B4E9", "#009E73",
                "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 base_theme <- theme_bw(base_size = 13) +
@@ -41,13 +25,9 @@ base_theme <- theme_bw(base_size = 13) +
         plot.title       = element_text(face = "bold", size = rel(1.0)),
         legend.title     = element_text(size = rel(0.85)))
 
-# ============================================================
-# Panel A -- coverage across the roughness range
-# ============================================================
 curve <- read_csv(file.path(RESULTS_DIR, "conformal_curve.csv"),
                   show_col_types = FALSE)
 
-# four lines drawn in the manuscript figure, in legend order
 A_order  <- c("standard", "variance", "AD", "roughness")
 A_labels <- c(standard   = "unconditional",
               variance    = "tree variance",
@@ -61,10 +41,9 @@ curveA <- curve %>%
 
 q_labels <- c("Q1\n(smooth)", "Q2", "Q3", "Q4", "Q5\n(rough)")
 
-# grayscale-safe encodings (per shared-style rule): linetype + shape, color added on top
 A_linetypes <- c("solid", "22", "dotted", "dotdash")
 A_shapes    <- c(16, 17, 15, 4)
-A_colors    <- okabe_ito[c(1, 4, 6, 3)]   # black, green, blue, sky-blue
+A_colors    <- okabe_ito[c(1, 4, 6, 3)]
 names(A_linetypes) <- names(A_shapes) <- names(A_colors) <- unname(A_labels[A_order])
 
 pA <- ggplot(curveA, aes(x = qbin, y = cov,
@@ -89,13 +68,9 @@ pA <- ggplot(curveA, aes(x = qbin, y = cov,
         legend.key.width = unit(1.4, "lines"),
         legend.text = element_text(size = rel(0.8)))
 
-# ============================================================
-# Panel B -- cliff coverage by conditioning (bars)
-# ============================================================
 res <- read_csv(file.path(RESULTS_DIR, "conformal_results.csv"),
                 show_col_types = FALSE)
 
-# five bars in the manuscript figure; the long method label -> short axis label
 B_map <- c("standard (unconditional)"        = "none",
            "Mondrian: tree variance"          = "var.",
            "Mondrian: applicability domain"   = "AD",
@@ -109,7 +84,6 @@ barB <- res %>%
   arrange(cond) %>%
   select(cond, cliff_cov)
 
-# five distinct grayscale shades + thin black outline (grayscale-safe)
 B_fills <- c("none"        = "grey85",
              "var."        = "grey68",
              "AD"          = "grey55",
@@ -128,9 +102,6 @@ pB <- ggplot(barB, aes(x = cond, y = cliff_cov, fill = cond)) +
   base_theme +
   theme(axis.text.x = element_text(size = rel(0.85)))
 
-# ============================================================
-# assemble
-# ============================================================
 fig <- (pA + pB) +
   plot_layout(widths = c(1.55, 1)) +
   plot_annotation(
@@ -148,7 +119,6 @@ cat("saved:", png_path, "\n")
 cat(sprintf("size: %.1f x %.1f in @300dpi -> %d x %d px\n",
             W, H, round(W * 300), round(H * 300)))
 
-# ---- sanity spot-checks against the CSV values ----
 cat("\n-- Panel A spot-check (cov by method,qbin) --\n")
 print(curveA %>% filter(method %in% c("roughness", "standard"), qbin %in% c(0, 4)) %>%
         select(method, qbin, cov) %>% arrange(method, qbin), n = Inf)

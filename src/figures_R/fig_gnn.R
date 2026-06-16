@@ -1,17 +1,5 @@
 #!/usr/bin/env Rscript
-# fig_gnn.R -- print-safe (NO colour, hatched) ggplot2 rebuild of the GNN
-# fixed-vs-tuned figure (gnn_tuned_figure.png).
-#
-# Patterns instead of colour so it stays legible in black-and-white:
-#   Panel A (scatter): one series, solid dark points -- no pattern needed.
-#   Panel B (bars):    fixed-60 = vertical hatching, tuned = crosshatch,
-#                      both white-filled with a black outline.
-# Hatching is drawn with geom_segment (no ggpattern dependency, which needs GDAL).
-#
-# Data (values not re-derived here):
-#   results/gnn_fixed_vs_tuned.csv  (mae_fixed, mae_tuned, mae_rf) -> Panel A
-#   results/gnn_quartile_gap.csv    (regime, rough_q, mean_gap, sem) -> Panel B
-#     (generate with: python src/make_gnn_panelB.py)
+# Print-safe hatched ggplot2 rebuild of the GNN fixed-vs-tuned figure.
 
 suppressPackageStartupMessages({
   library(ggplot2); library(readr); library(dplyr); library(patchwork)
@@ -31,7 +19,6 @@ base_theme <- theme_bw(base_size = 13) +
         plot.title = element_text(face = "bold", size = rel(0.92)),
         plot.title.position = "plot")
 
-# hatching helper: clipped vertical / horizontal / crosshatch segments for a rectangle
 make_hatch <- function(xmin, xmax, ymin, ymax, pattern, sx = 0.055, sy = 0.020) {
   out <- list()
   if (pattern %in% c("vert", "cross")) {
@@ -45,9 +32,6 @@ make_hatch <- function(xmin, xmax, ymin, ymax, pattern, sx = 0.055, sy = 0.020) 
   if (length(out)) do.call(rbind, out) else NULL
 }
 
-# ============================================================
-# Panel A -- tuned vs fixed-60 per-target MAE
-# ============================================================
 pa <- read_csv(file.path(RESULTS_DIR, "gnn_fixed_vs_tuned.csv"), show_col_types = FALSE)
 n  <- nrow(pa)
 nfix <- sum(pa$mae_fixed > pa$mae_rf); ntun <- sum(pa$mae_tuned > pa$mae_rf)
@@ -71,9 +55,6 @@ pA <- ggplot(pa, aes(mae_fixed, mae_tuned)) +
        y = "GNN test MAE, tuned (early stopping)") +
   base_theme
 
-# ============================================================
-# Panel B -- mean (GNN - RF) gap by roughness quartile, hatched
-# ============================================================
 pb <- read_csv(file.path(RESULTS_DIR, "gnn_quartile_gap.csv"), show_col_types = FALSE)
 pb$regime <- factor(pb$regime, levels = c("fixed-60", "tuned"))
 bw <- 0.38; off <- 0.20
@@ -86,7 +67,6 @@ bars <- pb %>% mutate(
 segs <- do.call(rbind, lapply(seq_len(nrow(bars)), function(i)
   make_hatch(bars$xmin[i], bars$xmax[i], bars$ymin[i], bars$ymax[i], bars$pattern[i])))
 
-# manual patterned legend (sits above the short Q3/Q4 bars, top-right)
 leg <- data.frame(regime = c("fixed-60", "tuned"),
                   xmin = 3.18, xmax = 3.44,
                   ymin = c(0.262, 0.232), ymax = c(0.282, 0.252),
@@ -102,7 +82,7 @@ pB <- ggplot() +
   geom_segment(data = segs, aes(x = x, y = y, xend = xend, yend = yend),
                colour = "grey25", linewidth = 0.22) +
   geom_rect(data = bars, aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
-            fill = NA, colour = "black", linewidth = 0.4) +                 # crisp edge over hatch
+            fill = NA, colour = "black", linewidth = 0.4) +
   geom_errorbar(data = bars, aes(x = center, ymin = mean_gap - sem, ymax = mean_gap + sem),
                 width = 0.12, colour = "black", linewidth = 0.4) +
   geom_rect(data = leg, aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
@@ -120,9 +100,6 @@ pB <- ggplot() +
        x = NULL, y = "mean (GNN error - RF error)") +
   base_theme
 
-# ============================================================
-# assemble
-# ============================================================
 fig <- (pA | pB) +
   plot_layout(widths = c(1, 1)) +
   plot_annotation(tag_levels = "A") &

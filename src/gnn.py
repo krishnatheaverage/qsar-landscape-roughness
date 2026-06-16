@@ -1,15 +1,4 @@
-"""
-gnn.py -- small GIN baseline, plain PyTorch on CPU.
-trains on each target's train split and saves the per-compound test error, in the
-same row order as cache/<dataset>.csv.
-
-not trying to be a SOTA GNN -- just a message-passing model with a smoothness prior
-(similar graphs -> similar preds), so we can check whether its cliff penalty piles
-up in the rough regions.
-
-out: cache_gnn/<dataset>.csv  [smiles, gnn_err]
-usage: python3 gnn.py DATASET ...  |  python3 gnn.py all
-"""
+# Small GIN baseline (plain PyTorch, CPU): trains per target and saves per-compound test error.
 import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from config import ROOT, PAPER_DIR, DATA_DIR, CACHE_DIR, CACHE_GNN, CACHE_GNN2, CACHE_MODELS, RESULTS_DIR, FIGURES_DIR, benchmark_dir
@@ -58,16 +47,16 @@ class GIN(nn.Module):
     def forward(self, X, A, M):
         H = X; readout = 0
         for mlp in self.mlps:
-            neigh = torch.bmm(A, H)             # sum over neighbours
-            H = mlp(H + neigh) * M.unsqueeze(-1)  # GIN-0, mask the padding
+            neigh = torch.bmm(A, H)
+            H = mlp(H + neigh) * M.unsqueeze(-1)
             cnt = M.sum(1, keepdim=True).clamp(min=1)
-            readout = readout + H.sum(1) / cnt    # masked mean-pool, summed over layers
+            readout = readout + H.sum(1) / cnt
         return self.head(readout).squeeze(-1)
 
 def run(name):
     out = os.path.join(CACHE_GNN, name + ".csv")
     if os.path.exists(out): print(f"  [skip] {name}"); return
-    cache = pd.read_csv(os.path.join(CACHE, name + ".csv"))          # test rows + y, in order
+    cache = pd.read_csv(os.path.join(CACHE, name + ".csv"))
     df = pd.read_csv(os.path.join(DATADIR, name + ".csv"))
     tr = df[df.split == "train"]
     tr_g = [mol_graph(s) for s in tr.smiles]; tr_y = tr.y.values

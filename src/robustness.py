@@ -1,16 +1,4 @@
-"""
-robustness.py METRIC  --  recompute the key numbers for every test compound across a
-range of k, under a chosen distance metric, for all 30 targets.
-
-metric-agnostic versions (so ECFP4 / ECFP6 / descriptor-Euclidean line up):
-    local_var(i)  = mean over k-NN of (y_i - y_j)^2   (roughness, uses y_i)
-    nbr_disp(i)   = std of the k-NN activities          (y-free)
-AD controls (same metric):
-    nn_dist(i)    = distance to nearest neighbour (no k dependence)
-    local_dens(i) = mean distance to the k-NN
-
-saved long-format -> robustness_<metric>.csv, with rf_err / cliff_mol merged from cache/.
-"""
+# Recompute roughness/AD metrics per test compound across k under a chosen distance metric for all targets.
 import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from config import ROOT, PAPER_DIR, DATA_DIR, CACHE_DIR, CACHE_GNN, CACHE_GNN2, CACHE_MODELS, RESULTS_DIR, FIGURES_DIR, benchmark_dir
@@ -23,7 +11,7 @@ RDLogger.DisableLog("rdApp.*"); warnings.filterwarnings("ignore")
 DATADIR = benchmark_dir()
 CACHE = CACHE_DIR
 K_LIST = [5, 10, 15, 20, 30]
-metric = sys.argv[1]  # ecfp4 | ecfp6 | desc
+metric = sys.argv[1]
 OUT = os.path.join(CACHE_DIR, f"robustness_{metric}.csv")
 
 gen4 = rdFingerprintGenerator.GetMorganGenerator(radius=2, fpSize=2048)
@@ -50,7 +38,6 @@ def descmat(smiles):
     return np.array(rows, float)
 
 def dist_test_train(te_smiles, tr_smiles):
-    """[n_te, n_tr] distance matrix under the chosen metric."""
     if metric in ("ecfp4", "ecfp6"):
         g = gen4 if metric == "ecfp4" else gen6
         trf = fps(tr_smiles, g); tef = fps(te_smiles, g)
@@ -59,7 +46,7 @@ def dist_test_train(te_smiles, tr_smiles):
             if fp is None: continue
             D[i] = 1.0 - np.array(DataStructs.BulkTanimotoSimilarity(fp, trf))
         return D
-    else:  # descriptor Euclidean, standardised on train stats
+    else:
         Xtr = descmat(tr_smiles); Xte = descmat(te_smiles)
         mu = np.nanmean(Xtr, 0); sd = np.nanstd(Xtr, 0) + 1e-9
         Xtr = np.where(np.isfinite(Xtr), Xtr, mu); Xte = np.where(np.isfinite(Xte), Xte, mu)
@@ -69,12 +56,12 @@ def dist_test_train(te_smiles, tr_smiles):
 rows = []
 for f in sorted(x for x in os.listdir(CACHE) if x.endswith(".csv") and not x.startswith("robustness")):
     name = f[:-4]
-    cache = pd.read_csv(os.path.join(CACHE, name + ".csv"))   # test rows in order: y, rf_err, cliff_mol
+    cache = pd.read_csv(os.path.join(CACHE, name + ".csv"))
     df = pd.read_csv(os.path.join(DATADIR, name + ".csv"))
     tr = df[df.split == "train"].reset_index(drop=True)
     tr_y = tr.y.values
     D = dist_test_train(cache.smiles.tolist(), tr.smiles.tolist())
-    order = np.argsort(D, axis=1)  # nearest first
+    order = np.argsort(D, axis=1)
     for i in range(len(cache)):
         oi = order[i]; di = D[i, oi]; yi = cache.y.iloc[i]
         nn_dist = float(di[0])

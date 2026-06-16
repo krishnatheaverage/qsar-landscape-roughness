@@ -1,8 +1,4 @@
-"""
-cross_domain.py -- external check outside bioactivity.
-same test on two MoleculeNet physchem benchmarks (ESOL solubility, Lipophilicity logD),
-with scaffold splits.
-"""
+# External check on two MoleculeNet physchem benchmarks (ESOL, Lipophilicity) with scaffold splits.
 import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from config import ROOT, PAPER_DIR, DATA_DIR, CACHE_DIR, CACHE_GNN, CACHE_GNN2, CACHE_MODELS, RESULTS_DIR, FIGURES_DIR, benchmark_dir

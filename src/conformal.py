@@ -1,29 +1,4 @@
-"""
-conformal.py -- which per-compound variable should a conformal predictor be conditioned on?
-
-Random-forest tree variance is the strongest general-purpose reliability signal (it ranks
-top-quartile errors well) but is at chance on activity cliffs; the applicability domain is
-oriented backward for cliffs. We test whether the activity-free local roughness (the pairwise
-SALI density) is the per-compound scale that captures the cliff failure these miss, and whether
-it complements rather than replaces variance.
-
-Two analyses on results/all_per_compound.csv (rf_err = |pred - y| plus roughness / variance /
-AD columns):
-
-(1) Complementarity of risk scores. Per-target ROC-AUC for flagging top-quartile-error compounds
-    and labeled activity cliffs, for tree variance, roughness, and a combined score
-    (within-target standardized variance + roughness). -> complementarity_results.csv
-
-(2) Conditional conformal coverage. Split-conformal 90% intervals from the held-out residuals
-    (test compounds split 50/50 into calibration/evaluation). An unconditional predictor is
-    compared with Mondrian predictors that stratify calibration into quintiles of a conditioning
-    variable -- tree variance, roughness, the applicability domain, or the combined score -- and
-    with locally-weighted (normalized) scaling by roughness or AD. We report marginal, cliff, and
-    non-cliff coverage, interval width, and coverage as a function of roughness quantile.
-    -> conformal_results.csv, conformal_curve.csv, paper/figures/figure6_conformal.png
-
-Averaged over 50 random splits, aggregated as the median across the 30 targets.
-"""
+# Selects the per-compound variable to condition a conformal predictor on (roughness vs variance/AD).
 import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from config import RESULTS_DIR, FIGURES_DIR
@@ -31,9 +6,9 @@ import numpy as np, pandas as pd
 from scipy.stats import rankdata
 import matplotlib; matplotlib.use("Agg"); import matplotlib.pyplot as plt
 
-ALPHA = 0.10      # 90% intervals
+ALPHA = 0.10
 REPS  = 50
-NB    = 5         # conditioning strata and roughness-curve quantiles
+NB    = 5
 df = pd.read_csv(os.path.join(RESULTS_DIR, "all_per_compound.csv"))
 
 def z(v):
@@ -61,7 +36,6 @@ def qbins(v_cal, v_pts, nb):
     thr = np.quantile(v_cal, np.linspace(0, 1, nb + 1)[1:-1])
     return np.minimum(np.digitize(v_pts, thr), nb - 1)
 
-# ---------- (1) complementarity of flagging scores ----------
 crows = []
 for ds, g in df.groupby("dataset"):
     g = g.reset_index(drop=True)
@@ -84,11 +58,9 @@ print("== flagging ROC-AUC (median over 30 targets) ==")
 print(comp.to_string(index=False))
 print("combined > variance on cliffs:", int((C.cliff_combined > C.cliff_variance).sum()), "/ 30 targets\n")
 
-# ---------- (2) conditional conformal coverage ----------
-# Mondrian conditioning variables (all activity-free / available before assay)
 MOND = ["variance", "roughness", "AD", "combined"]
-NORM = ["roughness", "AD"]            # locally-weighted (normalized) scales
-crv_methods = ["standard", "variance", "AD", "roughness"]   # lines drawn in the figure
+NORM = ["roughness", "AD"]
+crv_methods = ["standard", "variance", "AD", "roughness"]
 rows, curve_rows = [], []
 for rep in range(REPS):
     rng = np.random.RandomState(rep)
@@ -96,12 +68,12 @@ for rep in range(REPS):
         g = g.reset_index(drop=True)
         resid = g["rf_err"].values; cliff = g["cliff_mol"].values.astype(bool)
         var = clean(g["rf_var"].values); rough = clean(g["sali_mean"].values)
-        ad = -clean(g["nn_sim"].values)                  # higher = more AD risk
+        ad = -clean(g["nn_sim"].values)
         comb = z(var) + z(rough)
         VAR = {"variance": var, "roughness": rough, "AD": ad, "combined": comb}
         idx = rng.permutation(len(g)); h = len(g) // 2; cal, ev = idx[:h], idx[h:]
         if len(cal) < NB * 8 or len(ev) < NB * 8: continue
-        ev_rq = qbins(rough[ev], rough[ev], NB)          # roughness quintile of each eval point
+        ev_rq = qbins(rough[ev], rough[ev], NB)
 
         methods = {}
         qg = cq(resid[cal], ALPHA)
@@ -152,7 +124,6 @@ print(summary.to_string(index=False))
 Cu = pd.DataFrame(curve_rows).groupby(["method", "qbin"])["cov"].mean().reset_index()
 Cu.to_csv(os.path.join(RESULTS_DIR, "conformal_curve.csv"), index=False)
 
-# ---------- figure ----------
 COL = {"standard": "#555555", "variance": "#1b7837", "AD": "#878787", "roughness": "#2166ac"}
 LAB = {"standard": "unconditional", "variance": "tree variance", "AD": "applicability domain",
        "roughness": "roughness"}

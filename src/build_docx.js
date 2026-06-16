@@ -1,3 +1,4 @@
+// Builds the JCIM manuscript .docx from manuscript.json using the docx library.
 const fs = require("fs");
 const path = require("path");
 const ROOT = path.join(__dirname, "..");
@@ -6,9 +7,8 @@ const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
         PageBreak, VerticalAlign, LineNumberRestartFormat } = require("docx");
 
 const D = JSON.parse(fs.readFileSync(path.join(ROOT, "manuscript.json"), "utf8"));
-const CONTENT = 9360; // US Letter, 1" margins (DXA)
+const CONTENT = 9360;
 
-// map run dicts -> TextRun
 const R = (runs, base = {}) => runs.map(r => new TextRun({
   text: r.t, bold: r.b || base.bold || false, italics: r.i || base.italics || false,
   superScript: r.sup || false, subScript: r.sub || false, font: "Times New Roman", size: base.size || 24,
@@ -17,14 +17,13 @@ const R = (runs, base = {}) => runs.map(r => new TextRun({
 const para = (runs, opts = {}) => new Paragraph({
   children: R(runs, opts.run || {}),
   alignment: opts.align,
-  spacing: opts.spacing || { line: 480, lineRule: "auto", after: 0 }, // double
+  spacing: opts.spacing || { line: 480, lineRule: "auto", after: 0 },
   ...(opts.extra || {}),
 });
 
 const center = AlignmentType.CENTER, just = AlignmentType.JUSTIFIED;
 const children = [];
 
-// ---------- Title page ----------
 children.push(new Paragraph({ alignment: center, spacing: { before: 240, after: 240 },
   children: [new TextRun({ text: D.title, bold: true, font: "Times New Roman", size: 32 })] }));
 children.push(new Paragraph({ alignment: center, spacing: { after: 120 },
@@ -43,7 +42,6 @@ children.push(new Paragraph({ spacing: { after: 0 }, alignment: just,
   children: [new TextRun({ text: D.keywords, font: "Times New Roman", size: 24 })] }));
 children.push(new Paragraph({ children: [new PageBreak()] }));
 
-// ---------- Body ----------
 const border = { style: BorderStyle.SINGLE, size: 2, color: "999999" };
 const borders = { top: border, bottom: border, left: border, right: border };
 
@@ -89,7 +87,6 @@ for (const b of D.blocks) {
   }
 }
 
-// ---------- References ----------
 children.push(new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun("References")] }));
 D.references.forEach((ref, idx) => {
   children.push(new Paragraph({
@@ -100,7 +97,6 @@ D.references.forEach((ref, idx) => {
   }));
 });
 
-// ---------- TOC graphic page ----------
 children.push(new Paragraph({ children: [new PageBreak()] }));
 children.push(new Paragraph({ alignment: center, spacing: { before: 240, after: 240 },
   children: [new TextRun({ text: "For Table of Contents Use Only", bold: true, font: "Times New Roman", size: 24 })] }));
@@ -110,7 +106,7 @@ children.push(new Paragraph({ alignment: center, spacing: { after: 240 },
   children: [new TextRun({ text: D.authors, font: "Times New Roman", size: 22 })] }));
 children.push(new Paragraph({ alignment: center,
   children: [new ImageRun({ type: "png", data: fs.readFileSync(D.toc_graphic),
-    transformation: { width: 312, height: 168 }, // 3.25 x 1.75 in
+    transformation: { width: 312, height: 168 },
     altText: { title: "TOC", description: "Table of contents graphic", name: "TOC" } })] }));
 
 const doc = new Document({

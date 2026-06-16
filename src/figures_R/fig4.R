@@ -1,11 +1,5 @@
 #!/usr/bin/env Rscript
-# fig4.R -- ggplot2 port of Figure 4 (cross-domain validation).
-# Grayscale-safe grouped bars of zero-order vs partial(|AD) Spearman rho for
-# three groups (Bioactivity 30-target median, ESOL solubility, Lipophilicity
-# logD), in two panels: A = landscape Dirichlet energy, B = activity-free
-# neighbour dispersion. Bar heights come straight from results/figure4_plot_values.csv,
-# which src/make_figure4.py emits bar-for-bar from the same CSVs the matplotlib
-# figure uses -- nothing is re-derived here.
+# ggplot2 port of Figure 4: grouped grayscale bars for cross-domain validation.
 
 suppressMessages({
   library(ggplot2)
@@ -14,7 +8,6 @@ suppressMessages({
   library(patchwork)
 })
 
-# ---- paths (repo-root relative, robust to where Rscript is launched from) ----
 args <- commandArgs(trailingOnly = FALSE)
 file_arg <- sub("^--file=", "", args[grep("^--file=", args)])
 script_dir <- if (length(file_arg)) normalizePath(dirname(file_arg)) else getwd()
@@ -24,16 +17,13 @@ fig_dir <- file.path(root, "paper", "figures")
 dir.create(fig_dir, showWarnings = FALSE, recursive = TRUE)
 png_path <- file.path(fig_dir, "figure4_crossdomain.png")
 
-# ---- data ----
 df <- read_csv(file.path(results_dir, "figure4_plot_values.csv"),
                show_col_types = FALSE)
 
-# preserve the panel A/B group order from the source (Bioactivity, ESOL, Lipo)
 group_levels <- df %>%
   distinct(group, group_order) %>%
   arrange(group_order) %>%
   pull(group)
-# wrap the long group labels onto two lines, matching the matplotlib x ticks
 group_labels_wrapped <- c(
   "Bioactivity (30-target median)" = "Bioactivity\n(30-target median)",
   "ESOL (solubility)"              = "ESOL\n(solubility)",
@@ -46,7 +36,6 @@ df <- df %>%
                     labels = c("zero-order ρ", "partial ρ | AD"))
   )
 
-# ---- shared style ----
 base_theme <- theme_bw(base_size = 13) +
   theme(
     panel.grid.minor = element_blank(),
@@ -55,7 +44,6 @@ base_theme <- theme_bw(base_size = 13) +
     legend.key.size  = unit(0.9, "lines")
   )
 
-# two clearly different grey shades for the paired bars (zero-order vs partial)
 fill_vals <- c("zero-order ρ" = "grey20", "partial ρ | AD" = "grey68")
 y_lim <- c(0, 0.75)
 y_lab <- "Spearman ρ vs per-compound error"
