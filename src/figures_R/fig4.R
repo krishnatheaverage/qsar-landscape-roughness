@@ -60,7 +60,7 @@ fill_vals <- c("zero-order ρ" = "grey20", "partial ρ | AD" = "grey68")
 y_lim <- c(0, 0.75)
 y_lab <- "Spearman ρ vs per-compound error"
 
-make_panel <- function(d, title, show_ylab, legend_pos) {
+make_panel <- function(d, title, show_ylab) {
   ggplot(d, aes(x = group, y = value, fill = series)) +
     geom_col(position = position_dodge(width = 0.8), width = 0.72,
              colour = "black", linewidth = 0.3) +
@@ -72,7 +72,6 @@ make_panel <- function(d, title, show_ylab, legend_pos) {
          y = if (show_ylab) y_lab else NULL) +
     base_theme +
     theme(
-      legend.position    = legend_pos,
       legend.background   = element_blank(),
       legend.key          = element_blank(),
       axis.text.x         = element_text(size = rel(0.82))
@@ -82,23 +81,23 @@ make_panel <- function(d, title, show_ylab, legend_pos) {
 pA <- make_panel(
   filter(df, panel == "A"),
   "Landscape roughness (Dirichlet)",
-  show_ylab = TRUE,
-  legend_pos = c(0.5, 0.97)
+  show_ylab = TRUE
 )
 pB <- make_panel(
   filter(df, panel == "B"),
   "Activity-free roughness (nbr dispersion)",
-  show_ylab = FALSE,
-  legend_pos = c(0.82, 0.97)
+  show_ylab = FALSE
 )
 
 fig <- (pA | pB) +
+  plot_layout(guides = "collect") +
   plot_annotation(
     title = "External validation: the roughness–error relationship replicates outside bioactivity",
     tag_levels = "A",
     theme = theme(plot.title = element_text(face = "bold", size = 14, hjust = 0.5))
   ) &
-  theme(plot.tag = element_text(face = "bold", size = 14))
+  theme(legend.position = "bottom",
+        plot.tag = element_text(face = "bold", size = 14))
 
-ggsave(png_path, fig, width = 10, height = 5.0, dpi = 300)
+ggsave(png_path, fig, width = 10, height = 5.3, dpi = 300)
 cat("wrote", png_path, "\n")
