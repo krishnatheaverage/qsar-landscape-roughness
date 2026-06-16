@@ -113,7 +113,7 @@ fig <- (p1 | p2 | p3) +
   ) &
   theme(legend.position = "bottom")
 
-W <- 15; H <- 5.2
+W <- 11.5; H <- 4.9
 ggsave(png_path, plot = fig, width = W, height = H, dpi = 300)
 cat("saved ->", png_path, "\n")
 cat(sprintf("series order: %s\n", paste(series_levels, collapse = " | ")))

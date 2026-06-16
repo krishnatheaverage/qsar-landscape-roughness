@@ -124,7 +124,7 @@ combined <- (pA + pB) +
     theme = theme(plot.title = element_text(face = "bold", size = rel(1.0)))
   )
 
-W <- 13; H <- 5.6
+W <- 10; H <- 5.4
 ggsave(png_path, combined, width = W, height = H, dpi = 300)
 
 # --- report -----------------------------------------------------------------

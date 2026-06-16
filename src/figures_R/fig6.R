@@ -141,7 +141,7 @@ fig <- (pA + pB) +
   ) &
   theme(plot.tag = element_text(face = "bold", size = 13))
 
-W <- 12.8; H <- 5.0
+W <- 10; H <- 5.2
 ggsave(png_path, fig, width = W, height = H, dpi = 300)
 
 cat("saved:", png_path, "\n")

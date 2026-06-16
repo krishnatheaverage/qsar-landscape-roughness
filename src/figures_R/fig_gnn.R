@@ -128,7 +128,7 @@ fig <- (pA | pB) +
   plot_annotation(tag_levels = "A") &
   theme(plot.tag = element_text(face = "bold", size = 13))
 
-W <- 12.5; H <- 5.0
+W <- 10; H <- 5.2
 ggsave(png_path, fig, width = W, height = H, dpi = 300)
 cat("saved:", png_path, "\n")
 cat("Panel B values used:\n"); print(pb)
