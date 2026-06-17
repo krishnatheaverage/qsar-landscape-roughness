@@ -1,127 +1,112 @@
-\documentclass[journal=jcisd8,manuscript=article]{achemso}
+\documentclass[11pt,letterpaper]{article}
 
-% achemso = official ACS class; journal=jcisd8 is J. Chem. Inf. Model.
-\usepackage{amsmath}   % displayed equations
-\usepackage{graphicx}  % figures
-\usepackage{setspace}  % explicit double-spacing (ACS submission default)
+% Journal of Cheminformatics (BMC/IMRaD) formatted manuscript; compiles with tectonic.
+% For final submission this content can be dropped into the official Springer Nature sn-jnl template.
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{url}
+\usepackage{cite}          % numbered, citation-order references (BMC style)
 \graphicspath{{figures/}}
-
-\author{Krishna Harish}
-\affiliation{Elkins High School, Missouri City, Texas, United States}
-\email{krishnaharish2009@gmail.com}
-\title{Local Structure--Activity Landscape Roughness Predicts QSAR Error and Keeps Conformal Prediction Intervals Valid on Activity Cliffs}
-\keywords{activity cliffs, QSAR, structure--activity landscape, applicability domain, uncertainty quantification, machine-learning reliability}
+\setlength{\parskip}{0.4em}
+\pagestyle{plain}
 
 \begin{document}
-\doublespacing
 
-\begin{abstract}
-Machine-learning models of molecular potency fail on activity cliffs, structurally similar molecules with large potency differences, and the per-compound tools meant to flag unreliable predictions miss them: random-forest tree variance, the strongest general uncertainty signal, is no better than chance on cliffs, and the applicability domain (AD) is oriented backward, reporting high confidence in the dense regions where cliffs occur. We show that the missing signal is the local roughness of the structure--activity landscape, computable before assay from a compound's training neighbors without its own activity, and that it is the per-compound scale on which a prediction's interval reliability should be judged. Across thirty bioactivity benchmarks, conditioning a 90\% conformal predictor on tree variance or on the AD leaves interval coverage falling with local roughness and below nominal on activity cliffs; conditioning on roughness holds coverage flat across the roughness range and restores it on cliffs, for a few percent in interval width. Roughness complements rather than replaces uncertainty: a combined risk score keeps variance's ranking of ordinary error and adds the cliff sensitivity variance lacks, beating variance on cliffs on twenty-nine of thirty targets. The roughness signal is statistically distinct from the AD in partial-correlation and mixed-effects analyses, holds across three model classes and distance metrics, and reproduces on solubility and lipophilicity benchmarks. A related measure that uses the query's own activity tracks error more strongly (median Spearman 0.65) but cannot be computed before assay, bounding rather than providing the deployable signal. The result is a per-compound reliability estimate, available before assay, that keeps QSAR prediction intervals valid where models actually fail.
-\end{abstract}
+\begin{center}
+  {\LARGE\bfseries Local structure--activity landscape roughness detects the activity-cliff failure mode that standard QSAR reliability methods miss\par}
+  \vspace{1.0em}
+  {\large Krishna Harish\textsuperscript{1}\par}
+  \vspace{0.5em}
+  {\itshape \textsuperscript{1}Elkins High School, Missouri City, Texas, United States\par}
+  \vspace{0.3em}
+  {Correspondence: krishnaharish2009@gmail.com\par}
+\end{center}
+\vspace{0.5em}
 
-\section*{Introduction}
+\section*{Abstract}
+\noindent Machine-learning models of molecular potency fail on activity cliffs (pairs of similar molecules with large potency differences), and the per-compound tools meant to flag unreliable predictions miss this failure. We benchmark the standard reliability estimators (random-forest ensemble variance, distance-based applicability domain, Sheridan's three-measure error model, and a reliability-density-neighbourhood adaptation) on 30 MoleculeACE targets and show they all rank ordinary high-error predictions but are at chance or worse at identifying activity cliffs, because each is organized around proximity to the training data, whereas cliffs sit in dense, well-sampled regions. We introduce a per-compound measure of local structure--activity landscape roughness, computed from a compound's training neighbours without its own activity, that supplies the missing signal: it flags labelled cliffs at a median ROC-AUC of 0.69 where the prior methods score 0.35 to 0.52, stays distinct from the applicability domain under partial-correlation and mixed-effects control, and holds across three model classes, neighbourhood sizes, and distance metrics. Roughness complements rather than replaces uncertainty: a combined score keeps variance's ranking of ordinary error and adds the cliff sensitivity it lacks. The payoff is a calibrated, cliff-aware conformal predictor: conditioning 90\% prediction intervals on roughness holds coverage flat across the roughness range and restores it on cliffs, where conditioning on variance or the applicability domain leaves it below nominal. The relationship reproduces on solubility and lipophilicity, and all data and code are openly available and fully reproducible.
 
-Quantitative structure--activity relationship (QSAR) modeling and, more recently, deep learning are routine tools for prioritizing compounds in drug discovery.\cite{vamathevan2019,walters2021} Almost all such models rest on the molecular similarity principle: structurally similar molecules tend to have similar properties.\cite{johnson1990} That assumption lets a model generalize from known compounds to new ones, and it is built into the most widely used representations and algorithms, from fingerprint-based nearest-neighbor and kernel methods to message-passing graph neural networks, all of which map similar structures to similar predictions.
+\noindent\textbf{Contribution:} We demonstrate that local landscape roughness detects the activity-cliff failure mode that ensemble variance, the applicability domain, Sheridan's random-forest error model, and reliability-density-neighbourhood all miss, establish it as a per-compound reliability axis distinct from distance to the training data, and use it to build a conformal predictor that stays valid where QSAR models actually fail.
 
-Activity cliffs are the principled exception.\cite{maggiora2006,stumpfe2012} A cliff is a pair of structurally similar molecules whose potencies differ by orders of magnitude, a discontinuity in the structure--activity landscape that directly violates the similarity assumption. Cliffs are not rare curiosities; they are pervasive in medicinal-chemistry data sets and often mark the structural changes that matter most during optimization.\cite{cruzmonteagudo2014} Because they break the assumption prediction relies on, cliffs are where models fail, and a recent 30-target benchmark confirmed it: machine-learning models, deep networks especially, predicted cliff compounds markedly less accurately than the rest, with no method mastering them.\cite{vantilborg2022,dablander2023} The consequence is a problem of trust: a model issues a confident prediction for a compound on a cliff, exactly where it is least reliable. Identifying cliff-prone compounds in advance, from structure and before any assay, would let a modeler flag those predictions, triage compounds for experimental confirmation, and interpret model error. This is the promise we pursue.
+\section*{Keywords}
+activity cliffs; QSAR; structure--activity landscape; applicability domain; uncertainty quantification; conformal prediction; reliability; cheminformatics
 
-Existing tools answer adjacent questions. Data-set-level roughness indices, the ROGI index\cite{aldeghi2022} and its representation-normalized successor\cite{graff2023} together with the earlier MODI\cite{golbraikh2014} and SARI,\cite{peltason2007} return one scalar per data set that says whether the set is hard to model. At the opposite granularity, the Structure--Activity Landscape Index (SALI),\cite{guha2008} a potency difference divided by a structural distance, scores the steepness of a single pair of molecules. Neither answers which specific compounds a model will most likely mispredict: one aggregates over the whole landscape, the other describes edges, not compounds. Per-compound reliability methods, applicability-domain analyses\cite{netzeva2005,sahigara2012} and uncertainty estimators such as ensemble variance and conformal prediction,\cite{norinder2014,hirschfeld2020} target a different failure: they measure how far a query lies from the training data and flag extrapolation into sparse chemical space. Activity cliffs, though, sit in dense regions among close analogs, exactly where these methods report high confidence.
+\section*{Background}
 
-To our knowledge no per-compound, activity-free measure of local landscape roughness has been shown to predict QSAR error while being distinct from the applicability domain. Two lines of work come closest, and the distinction matters. Sheridan defined three per-compound reliability measures for random forests, among them the tree-ensemble variance and the predicted value, and showed they track expected error.\cite{sheridan2012} The reliability-density-neighbourhood method\cite{aniceto2016} likewise maps reliability from a query's local neighbourhood, combining distance to the training data with the local density of errors. Both are per-instance, but both, like the applicability domain, are organized around proximity to the training data: they estimate how well-supported a prediction is and succeed when failure comes from sparsity. Our axis is deliberately orthogonal. Local roughness is computable from structure alone, without the model or any activity; it targets the dense-region discontinuities those methods are not built to see; and for cliffs it is oriented opposite to the applicability domain. The strongest proximity signal, ensemble variance, ranks ordinary error well but is no better than chance on cliffs, and supplying the complementary axis that captures that failure is the contribution of this work.
+Quantitative structure--activity relationship (QSAR) modeling and, more recently, deep learning are routine tools for prioritizing compounds in drug discovery.\cite{vamathevan2019,walters2021} Almost all such models rest on the molecular similarity principle: structurally similar molecules tend to have similar properties.\cite{johnson1990} That assumption lets a model generalize from known compounds to new ones, and it is built into the most widely used representations and algorithms, from fingerprint-based nearest-neighbor and kernel methods to message-passing graph neural networks.
 
-By local roughness we mean how sharply activity changes in a compound's immediate structural neighborhood: a smooth neighborhood interpolates cleanly, a rough one does not. We make this concrete with a small family of functionals over a compound's nearest training neighbors, defined in full in the Methods: a similarity-weighted local Dirichlet energy and a Lipschitz aggregate that use the compound's own activity, and three activity-free measures (neighborhood activity dispersion, the pairwise-SALI density of the neighborhood, and a local H\"older regularity exponent) that do not. On the 30-target MoleculeACE benchmark and its fixed splits we test whether these predict the per-compound error of a random forest, against applicability-domain and uncertainty baselines, a data-set-level roughness index, and a graph-convolutional model, across a range of neighborhood sizes and three distance metrics.
+Activity cliffs are the principled exception.\cite{maggiora2006,stumpfe2012} A cliff is a pair of structurally similar molecules whose potencies differ by orders of magnitude, a discontinuity in the structure--activity landscape that directly violates the similarity assumption. Cliffs are pervasive in medicinal-chemistry data sets and often mark the structural changes that matter most during optimization.\cite{cruzmonteagudo2014} Because they break the assumption prediction relies on, cliffs are where models fail, and a recent 30-target benchmark confirmed it: machine-learning models, deep networks especially, predicted cliff compounds markedly less accurately than the rest, with no method mastering them.\cite{vantilborg2022,dablander2023} The consequence is a problem of trust: a model issues a confident prediction for a compound on a cliff, exactly where it is least reliable.
 
-Our central contribution is to identify the per-compound variable on which a prediction's reliability should be judged in the regime where models fail, and to show it is local roughness. A conformal predictor conditioned on roughness keeps 90\% interval coverage valid across the roughness range and on activity cliffs, where conditioning on tree variance or the applicability domain does not; the roughness axis is complementary to uncertainty, not a replacement, and a combined score inherits both. In support, the roughness signal predicts per-compound error on all 30 targets, survives control for the applicability domain in partial-correlation and mixed-effects analyses, is activity-free and so available before assay, holds across three model classes and three distance metrics, and reproduces on two physicochemical benchmarks. Descriptors that read the query's own activity correlate more strongly (Dirichlet energy median Spearman 0.65) but need the potency being predicted, so they bound what local geometry can explain rather than provide a deployable signal. The activity-free effect sizes are modest; their value is orthogonality to the reliability axes in use.
+The tools a modeler would use to catch unreliable predictions are organized around a single idea: a prediction is trustworthy if the query lies close to, and is well supported by, the training data. Distance-based applicability-domain (AD) analyses\cite{netzeva2005,sahigara2012} measure proximity to the training set. Uncertainty estimators such as random-forest ensemble variance and conformal prediction\cite{norinder2014,hirschfeld2020} measure predictive disagreement. Sheridan's widely used framework estimates a random forest's per-compound error from three proximity/variance measures (similarity to the nearest training compound, the spread of the tree predictions, and the predicted value).\cite{sheridan2012} The reliability-density-neighbourhood method maps reliability from a query's local neighbourhood, combining distance to the training data with the local density of training errors.\cite{aniceto2016} Data-set-level roughness indices such as ROGI\cite{aldeghi2022} and its successors\cite{graff2023,golbraikh2014,peltason2007} report whether an entire data set is hard to model. All of these are valuable, but they share an orientation around proximity to the training data, and activity cliffs occur in dense regions among close analogs, exactly where proximity-based methods report high confidence.
 
-\section*{Computational Methods}
+Here we ask whether a per-compound quantity that does not measure proximity, the local roughness of the structure--activity landscape, can detect the cliff failure mode the standard methods miss, and whether it provides a deployable, calibrated reliability signal. By local roughness we mean how sharply activity changes in a compound's immediate structural neighborhood: a smooth neighborhood interpolates cleanly, a rough one does not. We define a small family of functionals over a compound's nearest training neighbors, benchmark them head-to-head against the standard reliability estimators above on the 30-target MoleculeACE data, show that roughness alone catches cliffs, that it is statistically distinct from the applicability domain, and that conditioning a conformal predictor on it keeps interval coverage valid where models fail.
+
+\section*{Methods}
 
 \subsection*{Benchmark data sets}
-
-All analyses used the MoleculeACE benchmark,\cite{vantilborg2022} a curated collection of bioactivity data for 30 macromolecular targets drawn from ChEMBL v29,\cite{gaulton2012} comprising 48.7K measurements (35.6K unique structures) across 23 inhibition-constant ($K_i$) and 7 half-maximal effective concentration (EC$_{50}$) end points. For each target the regression target $y$ is the base-10 logarithm of potency ($-\log_{10}$ of the activity in nM; equivalently p$K_i$ or pEC$_{50}$ up to an additive constant), so that one unit corresponds to one order of magnitude in potency. Across the test compounds analyzed here $y$ spanned $-5.0$ to $2.0$ (mean $-1.8$).
-
-Activity-cliff annotations and train/test partitions were taken unchanged from the benchmark to ensure that our per-compound error estimates are directly comparable to the published results. Following van Tilborg et al.,\cite{vantilborg2022} a pair of compounds was labeled an activity cliff when the two molecules differed by more than 10-fold in potency ($\Delta g > 1$) and were structurally similar by at least one of three complementary measures: substructure similarity (Tanimoto coefficient on extended-connectivity fingerprints), scaffold similarity (Tanimoto coefficient on Bemis--Murcko scaffold fingerprints), or SMILES similarity (scaled Levenshtein distance), with any of the three exceeding 0.9. A molecule was designated a cliff compound if it participated in at least one such pair. Train/test splits were those distributed with the benchmark, obtained by spectral clustering of each data set on extended-connectivity fingerprints followed by stratified 80/20 partitioning within clusters. The resulting test sets contained 126--733 compounds per target (9{,}802 in total); the fraction of cliff compounds ranged from 9\% to 54\% across targets (38.7\% overall). For external validation beyond bioactivity, two MoleculeNet physicochemical regression benchmarks were additionally analyzed: aqueous solubility (ESOL; 1{,}128 compounds with measured log solubility\cite{delaney2004}) and lipophilicity (4{,}200 compounds with experimental $\log D$\cite{wu2018}). Lacking a distributed split, these were partitioned 80/20 by a Bemis--Murcko scaffold split,\cite{bemis1996} assigning whole scaffold groups to the training set in order of decreasing frequency.
+All analyses used the MoleculeACE benchmark,\cite{vantilborg2022} a curated collection of bioactivity data for 30 macromolecular targets drawn from ChEMBL v29,\cite{gaulton2012} comprising 48.7K measurements (35.6K unique structures) across 23 inhibition-constant ($K_i$) and 7 half-maximal effective concentration (EC$_{50}$) end points. For each target the regression target $y$ is the base-10 logarithm of potency ($-\log_{10}$ of the activity in nM). Activity-cliff annotations and train/test partitions were taken unchanged from the benchmark. Following van Tilborg et al.,\cite{vantilborg2022} a pair of compounds was labeled an activity cliff when potencies differed by more than 10-fold ($\Delta y > 1$) and structures were similar by at least one of substructure (Tanimoto on extended-connectivity fingerprints), scaffold, or SMILES (scaled Levenshtein) similarity exceeding 0.9; a molecule is a cliff compound if it joins at least one such pair. Test sets contained 126--733 compounds per target (9{,}802 total); cliff prevalence ranged 9--54\% (38.7\% overall). For external validation, two MoleculeNet physicochemical regression benchmarks were analyzed: aqueous solubility (ESOL; 1{,}128 compounds\cite{delaney2004}) and lipophilicity (4{,}200 compounds, $\log D$\cite{wu2018}), under a deterministic Bemis--Murcko scaffold split.\cite{bemis1996}
 
 \subsection*{Molecular representations and distance metrics}
-
-Unless stated otherwise, molecules were represented by 2{,}048-bit extended-connectivity fingerprints of radius 2 (ECFP4\cite{rogers2010}) computed with RDKit, and the distance between two molecules $i$ and $j$ was defined as $d_{ij} = 1 - T_{ij}$, where $T_{ij}$ is the Tanimoto coefficient; the corresponding similarity is $s_{ij} = T_{ij}$. For robustness analyses two further representations were used: 2{,}048-bit ECFP6 fingerprints (radius 3) under the same Tanimoto distance, and a standardized 12-descriptor physicochemical vector (molecular weight, calculated logP, topological polar surface area, hydrogen-bond donor and acceptor counts, rotatable-bond count, aromatic-ring count, fraction of $sp^3$ carbons, heavy-atom count, ring count, heteroatom count, and molar refractivity) under Euclidean distance, with each descriptor standardized to zero mean and unit variance using training-set statistics.
-
-For every test molecule $i$, its $k$ nearest neighbors $N_k(i)$ were identified among the \textbf{training} compounds under the chosen distance, so that all neighbor-derived quantities for a held-out molecule depend only on the training data and, where indicated, on that molecule's own activity. The default neighborhood size was $k = 10$.
+Unless stated otherwise, molecules were represented by 2{,}048-bit extended-connectivity fingerprints of radius 2 (ECFP4\cite{rogers2010}) computed with RDKit, and the distance between molecules $i$ and $j$ was $d_{ij} = 1 - T_{ij}$ (Tanimoto), with similarity $s_{ij} = T_{ij}$. Robustness analyses additionally used ECFP6 fingerprints and a standardized 12-descriptor physicochemical vector under Euclidean distance. For every test molecule $i$, its $k$ nearest neighbors $N_k(i)$ were identified among the \textbf{training} compounds; the default neighborhood size was $k = 10$.
 
 \subsection*{Local landscape-roughness descriptors}
-
-Two descriptors quantify the steepness of the structure--activity landscape in the immediate vicinity of a molecule and use the molecule's own activity $y_i$; we refer to these as \emph{landscape} descriptors. The first is a similarity-weighted local Dirichlet energy, defined as
+Two descriptors use the query's own activity $y_i$ (\emph{landscape} descriptors): a similarity-weighted local Dirichlet energy
 \begin{equation}
-R_D(i) = \frac{\sum_{j \in N_k(i)} s_{ij}\,(y_i - y_j)^2}{\sum_{j \in N_k(i)} s_{ij}}
+R_D(i) = \frac{\sum_{j \in N_k(i)} s_{ij}\,(y_i - y_j)^2}{\sum_{j \in N_k(i)} s_{ij}},
 \end{equation}
-i.e., the mean squared activity gap between $i$ and its neighbors $j$, each gap weighted by the structural similarity $s_{ij}$ (the Tanimoto coefficient defined above); it is the discrete analogue of the squared gradient of the activity function evaluated at $i$. The second is a local Lipschitz constant, an aggregation of the pairwise SALI\cite{guha2008},
-\begin{equation}
-R_L(i) = \max_{j \in N_k(i)} \frac{|y_i - y_j|}{\max(1 - s_{ij},\,\varepsilon)}
-\end{equation}
-with $\varepsilon = 10^{-3}$ to bound the denominator for near-identical pairs.
+and a local Lipschitz constant $R_L(i) = \max_{j} |y_i - y_j| / \max(1 - s_{ij},\varepsilon)$, $\varepsilon = 10^{-3}$. Because they require the activity being predicted, they bound what local geometry can explain rather than provide a deployable signal. Three \emph{activity-free} descriptors use only the training neighbours' activities and are computable before any assay of the query: the neighborhood activity dispersion $D(i) = \operatorname{std}\{y_j : j \in N_k(i)\}$; the pairwise-SALI density $S_{\mathrm{mean}}(i)$, the mean over neighbour pairs of $|y_a - y_b| / \max(1 - s_{ab},\varepsilon)$ (and its max-pooled variant $S_{\max}$)\cite{guha2008}; and a local H\"older regularity exponent (reported as a negative result).
 
-\subsection*{Activity-free (a priori) roughness descriptors}
+\subsection*{Baseline reliability methods}
+We compared local roughness head-to-head against four established per-compound reliability estimators, all computed on the same random forest and test compounds. (i) \emph{Ensemble variance}, the variance of the 200 tree predictions (equivalently Sheridan's TREE\_SD). (ii) The \emph{distance-based applicability domain}, $1 - s_{\mathrm{NN}}$, dissimilarity to the nearest training compound. (iii) \emph{Sheridan's three-measure error model}:\cite{sheridan2012} training compounds were binned into tertiles of nearest-training similarity, tree-prediction standard deviation, and predicted value; the out-of-bag root-mean-square error of each bin was recorded; each test compound was assigned the error of its bin. (iv) A \emph{regression adaptation of the reliability-density neighbourhood} (RDN):\cite{aniceto2016} each training compound's $k$-nearest-neighbour coverage radius was shrunk by a reliability weight $W = (1 - \mathrm{STD}) \times \mathrm{agreement}$ derived from its out-of-bag prediction, and a test compound's risk was its distance to the nearest training compound relative to that compound's shrunken radius. RDN was developed for classification and has no published regression form, so this comparison uses our own faithful adaptation, which we flag explicitly. The data-set-level ROGI index\cite{aldeghi2022} was used as a global-roughness baseline.
 
-Three descriptors estimate local roughness \textbf{without} reference to the query molecule's activity, and are therefore computable before any potency is known; we refer to these as \emph{a priori} descriptors. The neighborhood activity dispersion,
-\begin{equation}
-D(i) = \operatorname{std}\{\, y_j : j \in N_k(i) \,\}
-\end{equation}
-measures the spread of activities among the query's training neighbors. The pairwise-SALI density summarizes the steepness of the landscape \emph{within} the neighbor set,
-\begin{equation}
-S_{\max}(i) = \max_{a,b \in N_k(i)} \frac{|y_a - y_b|}{\max(1 - s_{ab},\,\varepsilon)}
-\end{equation}
-with $S_{\mathrm{mean}}(i)$ the mean over the same neighbor set, using only neighbor activities and neighbor-to-neighbor similarities. Finally, a local H\"older (regularity) exponent was estimated over the $K_H = 25$ nearest training neighbors by ordinary-least-squares fitting of $\log|y_a - y_b| = \alpha \log d_{ab} + c$ across all neighbor pairs $(a, b)$; the slope $\alpha$ is a local estimate of the activity function's H\"older regularity, with smaller $\alpha$ indicating rougher behavior.
+\subsection*{Predictive models and statistical analysis}
+A random forest (200 trees, $\sqrt{p}$ features, ECFP4; out-of-bag enabled for the baseline calibration) was the primary model; gradient-boosted trees and a radial-basis-function support-vector regressor were used for the model-class generality analysis. A Graph Isomorphism Network (GIN) provided a graph baseline. All models used a fixed random seed; hyperparameters were fixed a priori rather than tuned, since the analysis compares the relative structure of per-compound error rather than absolute accuracy. Per-compound out-of-sample error was $e_i = |\hat{y}_i - y_i|$. For each reliability score and target we computed the ROC-AUC for ranking top-quartile-error compounds and for flagging labelled cliffs, aggregated as the median across 30 targets. Spearman correlations between descriptors and per-compound error were aggregated as the median with a Wilcoxon signed-rank test; partial Spearman correlations and a linear mixed-effects model controlled for the applicability domain, with effect sizes reported as 95\% confidence intervals (exact $p$ values are uninformative at $n = 9{,}802$). All analyses were repeated for $k \in \{5,10,15,20,30\}$ and three distance metrics. Software versions and a single \texttt{reproduce.sh} entry point are given under Availability of data and materials.
 
-\subsection*{Baseline measures}
-
-Three families of established measures were computed for comparison. \emph{Applicability-domain} measures characterize a molecule's proximity to the training data: the nearest-neighbor similarity $s_{\mathrm{NN}}(i) = \max_j s_{ij}$ over the training set, and the local density, the mean similarity over $N_k(i)$. An \emph{uncertainty} baseline was obtained from the random-forest predictor as the variance of the individual tree predictions for each test molecule. A \emph{global-roughness} baseline was obtained with the ROGI index,\cite{aldeghi2022} a single dataset-level scalar that quantifies structure--property surface roughness through the loss of property dispersion under progressive coarse-graining; ROGI was computed per data set on the full activity distribution using the reference implementation, which also provides the SARI and (R)MODI modelability indices.
-
-\subsection*{Predictive models}
-
-A descriptor-based and a graph-based regressor were trained per target on the official training split and evaluated on the official test split; the per-compound out-of-sample error was $e_i = |\hat{y}_i - y_i|$.
-
-The descriptor model was a random forest\cite{breiman2001} as implemented in scikit-learn, with 200 trees and $\sqrt{p}$ features considered per split, fit on 2{,}048-bit ECFP4 features. Per-compound predictive variance was taken as the variance across the 200 tree predictions.
-
-The graph model was a Graph Isomorphism Network (GIN\cite{xu2019}) implemented in PyTorch. Each atom was described by a 16-dimensional feature vector (one-hot atomic number over C, N, O, F, P, S, Cl, Br, I, other, degree, formal charge, aromaticity flag, total hydrogen count, and ring-membership flag). Three GIN-0 layers with hidden width 64 propagated information according to $\mathbf{H}^{(l+1)} = \mathrm{MLP}^{(l)}(\mathbf{H}^{(l)} + \mathbf{A}\,\mathbf{H}^{(l)})$, where $\mathbf{A}$ is the bond adjacency matrix; the graph embedding was the sum over layers of the mean of the node embeddings, followed by a two-layer multilayer-perceptron head. Models were trained with Adam (learning rate $10^{-3}$) to minimize the mean squared error on standardized targets. Two training regimens were compared. The first used a fixed schedule of 60 epochs. The second (``tuned'') held out 10\% of the training set for validation, trained for up to 150 epochs with learning-rate reduction on plateau and best-checkpoint early stopping (patience 20), and used size-bucketed mini-batches of 128 to minimize padding. Per-compound test errors were computed as for the random forest. For the model-class generality analysis, two additional regressors were trained on the same ECFP4 features and splits (a histogram gradient-boosting regressor and a support-vector regressor (SVR) with a radial-basis-function (RBF) kernel, $C = 10$), each yielding per-compound test errors in the same way. All models used a fixed random seed (\texttt{random\_state}~$=0$), and hyperparameters were fixed a priori rather than tuned, since the analysis compares the relative structure of per-compound error across compounds rather than absolute predictive accuracy.
-
-\subsection*{Statistical analysis}
-
-The primary analysis quantified, for each target, the Spearman rank correlation between a roughness descriptor and the per-compound random-forest error, then aggregated the 30 coefficients as the median and interquartile range, reporting the fraction of targets with the expected sign and a two-sided Wilcoxon signed-rank test of the coefficients against zero; $p$ values across descriptors were adjusted by the Benjamini--Hochberg false-discovery-rate (FDR) procedure.\cite{benjamini1995} To test whether roughness is distinguishable from the applicability domain, partial Spearman correlations were computed per target by rank-transforming the descriptor, the error, and the control variables (nearest-neighbor similarity and local density), residualizing the descriptor and the error on the controls by ordinary least squares, and correlating the residuals; the resulting coefficients were aggregated as above. As a confound-controlled confirmation, a linear mixed-effects model (statsmodels) regressed within-target standardized error on within-target standardized roughness, with nearest-neighbor similarity, local density, and heavy-atom count as fixed-effect covariates and a per-target random intercept. The ability of a priori descriptors to flag benchmark-labeled cliffs was assessed by the per-target area under the receiver-operating-characteristic curve (AUC), aggregated as the median and range. All correlation and classification analyses were repeated for $k \in \{5, 10, 15, 20, 30\}$ and for the three distance metrics described above to assess robustness. Operational utility was assessed by an enrichment analysis: within each target, compounds were ranked by a risk score (local roughness; the negative nearest-neighbor similarity, representing the applicability domain in its standard orientation; or the random-forest tree variance, representing uncertainty), and the fraction of positives captured within the top $f\%$ was computed and averaged across targets, with positives defined either as top-quartile-error compounds or as labeled activity cliffs.
-
-Two reliability analyses were run on the held-out residuals. First, to compare risk signals directly, we computed the per-target area under the ROC curve for flagging top-quartile-error compounds and labeled activity cliffs, using the random-forest tree variance, the activity-free roughness (pairwise-SALI density), and a combined score formed as the sum of the within-target standardized variance and standardized roughness. Second, to test whether the descriptors yield calibrated prediction intervals, we built inductive (split) conformal\cite{norinder2014,papadopoulos2002} 90\% intervals, asking not how to normalize a conformal predictor but which per-compound variable it should be conditioned on. Within each target the test compounds were split at random into equal calibration and evaluation halves. An unconditional predictor (nonconformity score $|\hat{y}_i - y_i|$, constant-width intervals) was compared with two standard ways of making coverage conditional on a per-compound estimate: a locally-weighted (normalized) score $|\hat{y}_i - y_i| / \sigma(x_i)$\cite{papadopoulos2011} and a Mondrian scheme\cite{bostrom2020} that stratifies the calibration set into quintiles of a conditioning variable and calibrates within each. The conditioning variable was the tree variance, the roughness, the applicability domain ($1 - s_{\mathrm{NN}}$), or the combined variance-plus-roughness score; every variant retains the finite-sample marginal coverage guarantee at $1 - \alpha = 0.9$. We report marginal, activity-cliff, and non-cliff coverage, interval width, and coverage as a function of local-roughness quantile, averaged over 50 random splits and aggregated as the median across targets.
-
-\subsection*{Software and data availability}
-
-Analyses used Python 3.12 with RDKit (2026.03), scikit-learn (1.8), PyTorch (2.12), statsmodels, SciPy, the rogi package, NumPy, and pandas. The MoleculeACE benchmark data, activity-cliff labels, and train/test splits were obtained from the MoleculeACE Python package. All code required to reproduce the descriptors, models, statistics, and figures is available at \url{https://github.com/krishnatheaverage/qsar-landscape-roughness}.
-
-\section*{Results}
+\section*{Results and Discussion}
 
 \subsection*{Activity cliffs concentrate prediction error}
+Across the 30 benchmarks the random forest predicted cliff compounds less accurately than non-cliff compounds (mean absolute error 0.62 vs 0.46 log units; cliff error higher on 29 of 30 targets; Wilcoxon $p = 3.7 \times 10^{-9}$). Cliffs are a generic, reproducible failure mode; the question is whether it can be anticipated, and whether existing reliability tools anticipate it.
 
-Across the 30 benchmarks, activity-cliff compounds were predicted markedly less accurately than non-cliff compounds by the random forest, reproducing on our pipeline the observation that motivates the benchmark. The mean absolute test error was 0.62 log units for cliff compounds versus 0.46 for non-cliff compounds, a median per-target ratio of 1.35, and cliff error exceeded non-cliff error in 29 of the 30 targets (Wilcoxon signed-rank $p = 3.7 \times 10^{-9}$). Cliffs are thus a generic and reproducible failure mode rather than an artifact of any single data set, and the remainder of this work asks whether that failure can be anticipated from the geometry of the local landscape.
+\subsection*{Roughness detects the cliff failure that prior reliability methods miss}
+We benchmarked local roughness head-to-head against the four standard per-compound reliability estimators on two tasks: ranking the highest-error predictions in general, and flagging labelled activity cliffs (Table~\ref{tab:headtohead}). On ordinary error every proximity- or variance-based method performs well, with ensemble variance strongest (median ROC-AUC 0.72); roughness is the weakest of the set (0.60). On activity cliffs the picture inverts completely. Ensemble variance and Sheridan's full three-measure error model are at chance (0.51), the distance-based applicability domain is actively inverted (0.35), and the reliability-density-neighbourhood adaptation is below chance (0.46), because all four are organized around proximity to the training data and cliffs sit among close, densely sampled analogs. Local roughness is the only estimator that detects cliffs (0.69). A combined score (within-target standardized variance plus roughness) keeps variance's ranking of ordinary error (0.70) and adds the cliff sensitivity variance lacks (0.58). Roughness is therefore not a better general-error estimator; its distinct, demonstrable value is that it captures the cliff failure mode that the standard reliability methods systematically miss or invert.
+
+\begin{table}[htbp]
+\caption{Head-to-head reliability benchmark. Median per-target ROC-AUC (30 targets) for ranking top-quartile-error compounds and for flagging labelled activity cliffs. Every prior method ranks ordinary error but is at chance or worse on cliffs; local roughness alone detects cliffs, and the combined score inherits both.}
+\label{tab:headtohead}
+\centering
+\begin{tabular}{lcc}
+\hline
+Per-compound reliability method & Top-quartile error & Activity cliffs \\
+\hline
+Ensemble variance (Sheridan TREE\_SD)\cite{sheridan2012} & 0.72 & 0.51 \\
+Sheridan three-measure error model\cite{sheridan2012} & 0.64 & 0.51 \\
+Distance-based applicability domain\cite{sahigara2012} & 0.62 & 0.35 \\
+Reliability-density neighbourhood (regression adaptation)\cite{aniceto2016} & 0.62 & 0.46 \\
+Local roughness (this work) & 0.60 & \textbf{0.69} \\
+Combined (variance + roughness) & 0.70 & 0.58 \\
+\hline
+\end{tabular}
+\end{table}
 
 \subsection*{Activity-free roughness predicts per-compound error}
+Treating each target as an independent replicate, the activity-free neighborhood dispersion $D$ was positively correlated with per-compound random-forest error on all 30 targets (median Spearman $\rho = 0.28$, FDR-adjusted $p = 2.7 \times 10^{-9}$), and the pairwise-SALI density behaved likewise (median $\rho = 0.16$), each exceeding the applicability-domain baselines ($\rho \approx 0.18$--$0.19$) (Figure~\ref{fig:main}A). The landscape descriptors that use the query's own activity correlate far more strongly (Dirichlet energy median $\rho = 0.65$) but, requiring the potency being predicted, bound rather than provide the deployable signal. That a purely structural quantity tracks error on every target shows cliff-prone regions announce themselves before any potency is measured.
 
-We treated each target as an independent replicate and asked the question a modeler actually faces: can a per-compound quantity computed from a compound's training neighbors, without its own activity, predict which test compounds the random forest will get wrong? We summarize the answer as the distribution of per-target Spearman correlations across the 30 data sets (Figure~\ref{fig:main}A), and several quantities do. The activity-free neighborhood dispersion $D$, the spread of a compound's training neighbors' activities, was positively correlated with per-compound error on all 30 targets (median Spearman $\rho = 0.28$, false-discovery-rate-adjusted $p = 2.7 \times 10^{-9}$), and the pairwise-SALI density of the neighborhood behaved likewise (median $\rho = 0.16$, positive on all 30). These correlations are modest, and we treat them as modest throughout; their importance is that they are consistent in sign on every target. Both exceeded the two applicability-domain baselines, nearest-neighbor similarity and local density (median $\rho \approx 0.18$--$0.19$), and the only baseline that predicted error more strongly, the random-forest tree variance (median $\rho = 0.36$), is a property of the fitted ensemble rather than a structural quantity. We do not claim roughness is the better general-error predictor; we make the complementarity precise below, where tree variance ranks ordinary error and roughness ranks the cliffs variance misses. What matters here is that a purely structural quantity tracks per-compound error on every target, so cliff-prone regions announce themselves before any potency is measured.
+\subsection*{Roughness is distinct from the applicability domain}
+The dispersion result could reflect data sparsity, so we tested whether roughness predicts error after the applicability domain is controlled (Figure~\ref{fig:main}B). Partial Spearman correlations removing nearest-neighbor similarity and local density left the signal intact: the Dirichlet energy retained essentially all of its association ($0.65 \rightarrow 0.64$), neighborhood dispersion fell only modestly ($0.28 \rightarrow 0.23$), and the pairwise-SALI density rose ($0.16 \rightarrow 0.23$). A linear mixed-effects model agreed under simultaneous control of nearest-neighbor similarity, local density, molecular size, and a per-target random intercept: standardized neighborhood dispersion carried a coefficient of $+0.26$ (95\% CI $[0.24, 0.28]$), the pairwise-SALI density $+0.13$ ($[0.11, 0.15]$), and the landscape Dirichlet energy $+0.73$ ($[0.72, 0.75]$), all $p < 0.001$. Local roughness is thus a distinct axis of predictability, not a re-expression of distance to the training set. For cliffs the two notions are opposed: nearest-neighbor similarity, used in its standard extrapolation orientation, flags cliffs at an AUC of 0.35, because cliffs concentrate among the close analogs the applicability domain deems safe (Figure~\ref{fig:main}C).
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\linewidth]{figure1_main.png}
-\caption{Local structure--activity landscape roughness predicts per-compound QSAR error across 30 bioactivity targets. (A) Median Spearman correlation between each descriptor and per-compound random-forest error (median $\pm$ interquartile range over 30 targets); landscape descriptors (red) use the query compound's own activity, the activity-free descriptors (blue) do not, and applicability-domain (gray) and uncertainty (green) baselines are shown for reference. (B) Zero-order versus applicability-domain-controlled partial correlations; the relationship is retained or strengthened under control. (C) Area under the ROC curve for flagging benchmark-labeled activity cliffs from activity-free descriptors; nearest-neighbor similarity (gray) falls below 0.5 in the extrapolation orientation because cliffs cluster among close analogs.}
+\caption{Local structure--activity landscape roughness predicts per-compound QSAR error across 30 bioactivity targets. (A) Median Spearman correlation between each descriptor and per-compound random-forest error (median $\pm$ interquartile range); landscape descriptors use the query's own activity, activity-free descriptors do not. (B) Zero-order versus applicability-domain-controlled partial correlations; the relationship is retained or strengthened. (C) ROC-AUC for flagging labelled cliffs from activity-free descriptors; nearest-neighbor similarity falls below 0.5 in the extrapolation orientation because cliffs cluster among close analogs.}
 \label{fig:main}
 \end{figure}
 
-The descriptors that incorporate the query compound's own activity set an upper bound on this effect rather than supplying a stronger version of it. The similarity-weighted local Dirichlet energy $R_D$ correlated with error far more strongly (median $\rho = 0.65$, interquartile range 0.59--0.68, positive on all 30 targets; FDR-adjusted $p = 2.7 \times 10^{-9}$), and the Lipschitz/SALI aggregate similarly (median $\rho = 0.45$). That strength is in part mechanistic and in part definitional: a tree ensemble interpolates the activities of nearby training molecules, so a compound whose measured activity departs sharply from its neighbors' is necessarily mispredicted, and $R_D$ is built from precisely that departure. Computing it requires the potency one is trying to predict, so $\rho = 0.65$ should be read as how much of the per-compound error local geometry can explain in principle, an upper bound, not as a number available before assay. The rest of this work concerns the activity-free descriptors, which can be computed without it.
-
-\subsection*{Roughness is distinct from the applicability domain}
-
-The neighborhood-dispersion result could in principle reflect nothing more than data sparsity: compounds in poorly sampled regions are both harder to predict and more likely to have heterogeneous neighbors. The decisive test is therefore whether roughness predicts error \emph{after} the applicability domain is controlled. Partial Spearman correlations, removing the rank contribution of nearest-neighbor similarity and local density, left the roughness signal intact (Figure~\ref{fig:main}B). The landscape Dirichlet energy retained essentially all of its association ($0.65 \rightarrow 0.64$), and the activity-free descriptors held or strengthened: neighborhood dispersion fell only modestly ($0.28 \rightarrow 0.23$) and the pairwise-SALI density rose ($0.16 \rightarrow 0.23$). The strengthening of several partial correlations indicates that the applicability-domain variables act as mild suppressors rather than as the underlying cause. A linear mixed-effects model reached the same conclusion under simultaneous control of nearest-neighbor similarity, local density, molecular size, and a per-target random intercept: standardized neighborhood dispersion carried a coefficient of $+0.26$ (95\% CI $[0.24, 0.28]$, in standard deviations of error per standard deviation of dispersion), the pairwise-SALI density $+0.13$ ($[0.11, 0.15]$), and the landscape Dirichlet energy $+0.73$ ($[0.72, 0.75]$). All three were significant at $p < 0.001$, but at this sample size ($n = 9{,}802$) exact $p$ values are uninformative, so we report effect sizes with confidence intervals throughout. Local landscape roughness is thus a distinct axis of predictability, not a re-expression of distance to the training set; this is the central claim of this work.
-
 \subsection*{Generality across model classes}
-
-Because per-compound error was measured primarily with a random forest, we asked whether the relationship is a property of the landscape or of that particular algorithm. Repeating the analysis with two further model classes trained on the same fingerprints and splits (gradient-boosted trees and a radial-basis-function support-vector regressor) gave the same picture (Table~\ref{tab:models}). The landscape Dirichlet energy correlated with per-compound error at a median Spearman $\rho$ of 0.65, 0.58, and 0.55 for the random forest, gradient boosting, and support-vector regressor, respectively; the activity-free neighborhood dispersion at 0.28, 0.25, and 0.24; and the partial correlation, after controlling for the applicability domain, at 0.23, 0.21, and 0.18. The signal is therefore consistent across model classes rather than an idiosyncrasy of a single learner: it tracks where the structure--activity landscape is locally rough.
+Repeating the analysis with gradient-boosted trees and a support-vector regressor on the same features gave the same picture (Table~\ref{tab:models}): the landscape Dirichlet energy correlated with per-compound error at median $\rho$ of 0.65, 0.58, and 0.55; the activity-free dispersion at 0.28, 0.25, and 0.24; and the applicability-domain-controlled partial correlation at 0.23, 0.21, and 0.18. The signal is consistent across model classes rather than an idiosyncrasy of a single learner.
 
 \begin{table}[htbp]
-\caption{Median Spearman correlation (across 30 targets) between local roughness and per-compound error for three model classes. The final column is the neighborhood-dispersion correlation after controlling for the applicability domain.}
+\caption{Median Spearman correlation (30 targets) between local roughness and per-compound error for three model classes. The final column is the neighborhood-dispersion correlation after controlling for the applicability domain.}
 \label{tab:models}
 \centering
 \begin{tabular}{lccc}
@@ -135,200 +120,115 @@ SVR (RBF) & 0.55 & 0.24 & 0.18 \\
 \end{tabular}
 \end{table}
 
-\subsection*{Activity-free flagging of cliff-prone compounds}
-
-If roughness anticipates error independently of the applicability domain, the activity-free descriptors should also flag the benchmark's labeled activity cliffs, and they do, with the caveat that the simplest descriptor is the weakest (Figure~\ref{fig:main}C). The pairwise-SALI density identified cliff compounds with a median per-target ROC-AUC of 0.69 (max-pooled variant 0.67), substantially above the neighborhood dispersion (0.58) and the random-forest uncertainty (0.52, indistinguishable from chance). The advantage of the SALI-density descriptors is interpretable: a query embedded among training analogs that themselves form a steep micro-landscape is far more likely to lie on a cliff than one whose neighbors merely span a wide activity range.
-
-A complementary and initially counterintuitive observation concerns the applicability domain itself. Nearest-neighbor similarity, used directly, identified cliff compounds with a median AUC of 0.65, because cliffs occur preferentially among compounds with very close training analogs, as their definition (high similarity, large potency difference) requires. The implication is pointed: classical applicability-domain reasoning, which flags low-similarity extrapolation compounds as unreliable, is oriented exactly backward for cliffs, reassuring the modeler about the dense, high-similarity regions where cliffs in fact concentrate (the same variable, oriented toward extrapolation risk, gives an AUC of 0.35). Roughness and applicability domain are therefore not merely statistically separable but conceptually opposed for this failure mode.
-
-Not every roughness construct succeeded. The local H\"older regularity exponent, estimated from the log--log scaling of activity differences with distance over each neighborhood, showed no association with error (median $\rho = 0.01$; FDR-adjusted $p = 0.61$) and no useful cliff-flagging ability (AUC 0.55). We attribute this to the instability of a two-parameter scaling fit over the small, discretely sampled neighborhoods available per compound, and report it as a negative result; the practical signal resides in the dispersion- and SALI-based descriptors.
-
-\subsection*{Operational value: triaging unreliable predictions}
-
-The correlations above translate into a concrete triage benefit, and clarify where roughness is and is not the right signal (Figure~\ref{fig:triage}). When the goal is to recover the highest-error predictions in general, the model's own ensemble uncertainty is the strongest single flag: flagging the top 20\% of compounds by random-forest tree variance recovers 38\% of the top-quartile-error compounds (a 1.9-fold enrichment over random), versus 33\% for roughness and 32\% for the applicability domain (Figure~\ref{fig:triage}A). The picture inverts for activity cliffs specifically (Figure~\ref{fig:triage}B). Flagging the top 20\% by roughness (pairwise-SALI density) recovers 33\% of labeled cliffs, a 1.6-fold enrichment, whereas ensemble uncertainty performs no better than random (1.0-fold) and the applicability domain is actively counterproductive (0.45-fold, worse than random, again because cliffs cluster among close analogs that the applicability domain deems safe). Roughness is therefore not a universal replacement for uncertainty estimation; its distinct value is that it captures the cliff failure mode that the standard reliability signals miss or invert.
+\subsection*{Operational triage}
+The head-to-head translates into a concrete triage benefit (Figure~\ref{fig:triage}). To recover the highest-error predictions in general, ensemble uncertainty is the strongest single flag (top 20\% recovers 38\% of top-quartile errors, a 1.9-fold enrichment), with roughness (33\%) and the applicability domain (32\%) close behind. For activity cliffs the picture inverts: ranking the top 20\% by roughness recovers 33\% of labelled cliffs (1.6-fold), where ensemble uncertainty performs at chance (1.0-fold) and the applicability domain below it (0.45-fold).
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\linewidth]{figure5_enrichment.png}
-\caption{Operational triage value of an activity-free roughness flag. Fraction of (A) high-error predictions (top-quartile per-compound error) and (B) labeled activity cliffs recovered as a function of the percentage of compounds flagged as low-confidence, averaged over 30 targets, ranking by roughness (blue), the applicability domain in its standard orientation (gray), random-forest tree variance (green), or at random (dotted).}
+\caption{Operational triage value of an activity-free roughness flag. Fraction of (A) high-error predictions and (B) labelled activity cliffs recovered as a function of the percentage of compounds flagged as low-confidence, averaged over 30 targets, ranking by roughness, the applicability domain, random-forest tree variance, or at random.}
 \label{fig:triage}
 \end{figure}
 
-\subsection*{Robustness to neighborhood size and distance metric}
-
-To establish that these relationships do not depend on arbitrary modeling choices, the per-target and partial correlations were recomputed across five neighborhood sizes ($k = 5$--30) and three distance definitions: Tanimoto similarity over ECFP4 and ECFP6 fingerprints and Euclidean distance in a standardized twelve-descriptor physicochemical space (Figure~\ref{fig:robust}). The relationship was stable throughout. Under ECFP4, a uniform-weight variant of the landscape roughness correlated with error at a median $\rho$ of 0.64 at $k = 5$, declining gently to 0.59 at $k = 30$, while neighborhood dispersion ranged from 0.27 to 0.22; ECFP6 yielded nearly identical values, indicating no dependence on fingerprint radius. In the lower-dimensional descriptor space the correlations attenuated ($\rho \approx 0.46$ and 0.15, respectively) but remained positive on all 30 targets, as expected for a representation that resolves structural neighborhoods more coarsely. Critically, the partial correlation controlling for nearest-neighbor distance and local density remained positive in all fifteen $k$--metric combinations. The signal is therefore not an artifact of any single similarity definition or neighborhood radius, and small neighborhoods ($k = 5$--10) are preferable.
+\subsection*{Robustness and external validation}
+Across five neighborhood sizes ($k = 5$--30) and three distance metrics, the relationship was stable, and the applicability-domain-controlled partial correlation remained positive in all fifteen combinations (Figure~\ref{fig:robust}). Applied unchanged to the two MoleculeNet physicochemical benchmarks under scaffold splits (Figure~\ref{fig:crossdomain}), the central result reproduced: landscape roughness predicted per-compound error on solubility and lipophilicity (partial $\rho = 0.60$ and 0.64), matching the bioactivity value. The activity-free dispersion transferred more modestly (partial $\rho = 0.19$ on solubility, 0.07 on lipophilicity), consistent with the modest, target-dependent magnitude of the activity-free signal throughout.
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\linewidth]{robustness_figure.png}
-\caption{Stability of the roughness--error relationship across neighborhood size $k$ and molecular distance metric. Median Spearman correlation over 30 targets between per-compound random-forest error and (left) a landscape roughness measure, (center) the activity-free neighborhood dispersion, and (right) the neighborhood dispersion after controlling for the applicability domain, for ECFP4/Tanimoto, ECFP6/Tanimoto, and a 12-descriptor Euclidean representation.}
+\caption{Stability of the roughness--error relationship across neighborhood size $k$ and molecular distance metric (ECFP4/Tanimoto, ECFP6/Tanimoto, and a 12-descriptor Euclidean representation), for a landscape roughness measure, the activity-free dispersion, and the dispersion after controlling for the applicability domain.}
 \label{fig:robust}
 \end{figure}
-
-\subsection*{External validation beyond bioactivity}
-
-To test whether the relationship generalizes beyond the bioactivity setting in which it was developed, we applied the identical pipeline to two MoleculeNet physicochemical regression benchmarks, aqueous solubility (ESOL\cite{delaney2004}) and lipophilicity ($\log D$\cite{wu2018}), using scaffold splits\cite{bemis1996} rather than the bioactivity-specific partitions (Figure~\ref{fig:crossdomain}). The central result reproduced. Landscape roughness predicted the per-compound random-forest error on both tasks (Spearman $\rho = 0.60$ for solubility and 0.67 for lipophilicity) and retained essentially all of that association after the applicability domain was controlled (partial $\rho = 0.60$ and 0.64), closely matching the bioactivity value (0.65). The activity-free neighborhood dispersion also transferred, predicting error on both tasks ($\rho = 0.17$ and 0.20) and surviving the applicability-domain control on solubility (partial $\rho = 0.19$) though only weakly on lipophilicity (0.07), consistent with the modest and somewhat target-dependent magnitude of the activity-free signal observed throughout. Local landscape roughness therefore reflects a property of structure--activity and structure--property landscapes in general, rather than an idiosyncrasy of protein-binding data.
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\linewidth]{figure4_crossdomain.png}
-\caption{External validation on physicochemical regression benchmarks. Zero-order and applicability-domain-controlled (partial) Spearman correlations between roughness and per-compound error for (A) the landscape Dirichlet energy and (B) the activity-free neighborhood dispersion, for the 30-target bioactivity median and for aqueous solubility (ESOL) and lipophilicity (logD).}
+\caption{External validation on physicochemical regression benchmarks. Zero-order and applicability-domain-controlled (partial) Spearman correlations between roughness and per-compound error for (A) the landscape Dirichlet energy and (B) the activity-free dispersion, for the 30-target bioactivity median and for aqueous solubility and lipophilicity.}
 \label{fig:crossdomain}
 \end{figure}
 
-\subsection*{Where a graph-convolutional model underperforms}
-
-We include a graph-convolutional model only to characterize a standard message-passing baseline, not to probe the deep-learning ceiling. Consistent with prior benchmarking, the graph isomorphism network produced higher mean absolute error (MAE) than the random forest on all 30 targets (0.71 versus 0.52 log units). Resolving this gap by local roughness gave a counterintuitive pattern (Figure~\ref{fig:gnn}): the network's disadvantage was largest in the smoothest quartile of chemical space (mean error excess 0.25 log units) and smallest in the roughest (0.13), the per-compound excess correlated negatively with roughness ($\rho = -0.07$, $p < 10^{-4}$), and its deficit on labeled cliffs (0.16) was smaller than on non-cliff compounds (0.21). Retraining with a validation set, learning-rate scheduling, and best-checkpoint early stopping did not systematically help (mean MAE 0.72; better than the fixed schedule on 14 of 30 targets), and both regimens reproduced the same ordering. The familiar advantage of descriptors over graph networks on these data is thus concentrated in smooth, well-sampled regions, not in superior treatment of cliffs, where both classes fail comparably. Neither network was competitive in absolute terms and architecture optimization was out of scope; we present this as a supporting observation only.
-
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=\linewidth]{gnn_tuned_figure.png}
-\caption{Comparison with a graph-convolutional baseline. (A) Per-target test mean absolute error of the graph isomorphism network under a fixed 60-epoch schedule versus validated early stopping; both regimens exceed the random-forest error on all 30 targets. (B) Mean (network $-$ random forest) per-compound error by within-target roughness quartile (Q1 smoothest to Q4 roughest) for both regimens; the deficit is largest where the landscape is smooth.}
-\label{fig:gnn}
-\end{figure}
-
-\subsection*{Local versus global descriptions of landscape roughness}
-
-Finally, a data-set-level description of roughness does not substitute for the per-compound one. The global ROGI index correlated with the cliff fraction across the 30 benchmarks (Spearman $\rho = 0.60$) but not with mean random-forest error ($\rho = -0.12$, $p = 0.54$), plausibly because the benchmarks were curated to be cliff-rich and so occupy a narrow band of global roughness (ROGI 0.04--0.11), while mean error also depends on data-set size and chemical diversity. A single scalar cannot resolve which compounds within a set will be mispredicted; the per-compound descriptors answer the different question of where on a landscape predictions should be trusted.
-
-\subsection*{Roughness is the per-compound scale that keeps intervals valid on cliffs}
-
-The natural objection to a new reliability signal is that the model already supplies one. It does, and it is strong: ranking compounds by random-forest tree variance recovers top-quartile errors with a median ROC-AUC of 0.71, well ahead of the activity-free roughness at 0.60 (Table~\ref{tab:complementarity}). But that signal is blind to the failure that motivates this work. On labeled activity cliffs the tree variance is no better than chance (AUC 0.52), while the roughness flags them at 0.69. The two are complementary rather than competing: a combined score, the sum of the within-target standardized variance and roughness, retains essentially all of variance's ranking of ordinary error (0.70) and beats variance on cliffs on 29 of the 30 targets. Roughness is not a better uncertainty estimate; it is the orthogonal one that captures the cliff failure uncertainty systematically misses.
-
-\begin{table}[htbp]
-\caption{Median per-target ROC-AUC (across 30 targets) for flagging top-quartile-error compounds and labeled activity cliffs. Tree variance ranks ordinary error best but is at chance on cliffs; roughness inverts this; the combined score inherits both.}
-\label{tab:complementarity}
-\centering
-\begin{tabular}{lcc}
-\hline
-Risk score & Top-quartile error & Activity cliffs \\
-\hline
-Random-forest tree variance & 0.71 & 0.52 \\
-Local roughness (SALI density) & 0.60 & 0.69 \\
-Combined (variance $+$ roughness) & 0.70 & 0.58 \\
-\hline
-\end{tabular}
-\end{table}
-
-This complementarity becomes decisive when the goal is a calibrated prediction interval. A conformal predictor turns a point estimate into an interval with a coverage guarantee, but the guarantee is only marginal, and the per-compound variable chosen to make it conditional decides where the coverage lands. Conditioning on tree variance, the obvious choice, does not solve the problem: a Mondrian predictor stratified by variance left coverage still falling with local roughness and its cliff coverage at 86.0\%, no better than the 87.2\% of unconditional intervals (Figure~\ref{fig:conformal}). The applicability domain is worse: as a locally-weighted nonconformity scale it drops cliff coverage to 82.0\%, and as a Mondrian stratifier it too leaves coverage declining with roughness, because cliffs are dense rather than sparse and it spends interval width in the wrong place. Only conditioning on the activity-free roughness fixes it. A roughness-stratified Mondrian predictor held coverage flat across the whole roughness range, within two points of nominal where the unconditional and variance-conditioned predictors sag to 87\% and 90\% in the roughest fifth of compounds (Figure~\ref{fig:conformal}A), lifted cliff coverage to 89.5\% (improving 27 of 30 targets) at a 6\% median increase in width, and a locally-weighted score on the same roughness reached 91.2\% (Figure~\ref{fig:conformal}B). Conditioning on the combined variance-plus-roughness score keeps coverage flat across roughness at no width cost while recovering most of the cliff coverage, the pragmatic choice when both failure modes matter. The contribution is not the conformal machinery, which is standard, but the identification of the per-compound scale: where the landscape is rough, local roughness makes coverage valid and the conventional proximity-based signals, ensemble uncertainty and the applicability domain, do not.
+\subsection*{Roughness keeps prediction intervals valid on activity cliffs}
+The head-to-head advantage becomes decisive for calibrated prediction intervals. A conformal predictor turns a point estimate into an interval with a coverage guarantee, but the guarantee is only marginal, and the per-compound variable chosen to make it conditional decides where the coverage lands. Conditioning on tree variance, the obvious choice, does not solve the problem: a Mondrian predictor stratified by variance left coverage falling with local roughness and its cliff coverage at 86.0\%, no better than the 87.2\% of unconditional intervals (Figure~\ref{fig:conformal}). The applicability domain is worse, dropping cliff coverage to 82.0\% as a locally-weighted scale. Only conditioning on the activity-free roughness fixes it: a roughness-stratified Mondrian predictor held coverage flat across the whole roughness range, lifted cliff coverage to 89.5\% (improving 27 of 30 targets) at a 6\% median increase in width, and a locally-weighted roughness score reached 91.2\%. Conditioning on the combined variance-plus-roughness score keeps coverage flat at no width cost while recovering most of the cliff coverage. The contribution is not the conformal machinery, which is standard, but the identification of the per-compound scale: where the landscape is rough, local roughness makes coverage valid and the conventional proximity-based signals do not.
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\linewidth]{figure6_conformal.png}
-\caption{Roughness is the per-compound scale for cliff-valid conformal intervals. (A) Coverage of 90\% inductive-conformal intervals as a function of local-roughness quantile (Q1 smoothest to Q5 roughest), for unconditional intervals and Mondrian intervals conditioned on random-forest tree variance, the applicability domain, or the activity-free roughness (dashed line, nominal). Unconditional, variance-, and applicability-domain-conditioned coverage all fall with roughness; only roughness conditioning holds it flat. (B) Coverage on labeled activity cliffs for the same conditionings and for the combined variance-plus-roughness score. Variance and applicability-domain conditioning leave cliff coverage at or below the unconditional level; roughness restores it toward nominal. Median over 30 targets and 50 calibration/evaluation splits.}
+\caption{Roughness is the per-compound scale for cliff-valid conformal intervals. (A) Coverage of 90\% inductive-conformal intervals versus local-roughness quantile, for unconditional intervals and Mondrian intervals conditioned on tree variance, the applicability domain, or roughness. (B) Coverage on labelled activity cliffs for the same conditionings and the combined score. Median over 30 targets and 50 calibration/evaluation splits.}
 \label{fig:conformal}
 \end{figure}
 
-\section*{Discussion}
+\subsection*{Comparison with a graph-convolutional model}
+Consistent with prior benchmarking, a graph isomorphism network gave higher mean absolute error than the random forest on all 30 targets (0.71 versus 0.52 log units). Resolving the gap by roughness, the network's disadvantage was largest in the smoothest quartile (excess 0.25 log units) and smallest in the roughest (0.13), and its deficit on cliffs (0.16) was smaller than on non-cliff compounds (0.21). A tuned regimen did not systematically help (mean MAE 0.72; better on 14 of 30 targets). The familiar advantage of descriptors over graph networks on these data is thus concentrated in smooth, well-sampled regions, not in superior treatment of cliffs, where both classes fail comparably. Neither network was architecture-optimized, so this is offered as a supporting observation (Figure~\ref{fig:gnn}).
 
-The error a QSAR model makes on an individual compound is governed substantially by the local roughness of the structure--activity landscape surrounding it, and that roughness, estimated from a compound's training neighbors without its own activity, is the per-compound scale on which a prediction's reliability should be judged in the regime where models actually fail. The signals already used for this, ensemble uncertainty and the applicability domain, are organized around a compound's proximity to the training data; they rank ordinary error but are blind to activity cliffs, which sit among close analogs in the dense regions those signals report as safe. Across thirty bioactivity benchmarks the roughness signal captured exactly that failure: it predicted per-compound error independently of the applicability domain, and a conformal predictor conditioned on it kept interval coverage valid on cliffs where conditioning on tree variance or the applicability domain did not.
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{gnn_tuned_figure.png}
+\caption{Comparison with a graph-convolutional baseline. (A) Per-target test mean absolute error of the graph isomorphism network under a fixed schedule versus validated early stopping; both exceed the random forest on all 30 targets. (B) Mean (network $-$ random forest) per-compound error by within-target roughness quartile; the deficit is largest where the landscape is smooth.}
+\label{fig:gnn}
+\end{figure}
 
-The practical outcome is a per-compound, activity-free reliability estimate. The pairwise-SALI density of a compound's training neighbors flags cliff-prone molecules before any measurement and complements the two reliability signals already in common use, namely distance-based applicability-domain checks (which address extrapolation into sparse chemical space) and ensemble or conformal uncertainty (which address predictive variance), by targeting the dense-region discontinuities that both systematically miss. In a triage setting this distinction is concrete: ranking predictions by roughness preferentially recovers activity cliffs, which ensemble uncertainty flags no better than chance and the applicability domain ranks worse than random; and, used to condition a conformal predictor, the same roughness keeps prediction-interval coverage valid across the roughness range, including on the cliffs where unconditional intervals silently under-cover.
+\subsection*{Local versus global roughness}
+A data-set-level description of roughness does not substitute for the per-compound one. The global ROGI index correlated with the cliff fraction across the 30 benchmarks (Spearman $\rho = 0.60$) but not with mean random-forest error ($\rho = -0.12$, $p = 0.54$): a single scalar cannot resolve which compounds within a set will be mispredicted.
 
-These conclusions are bounded by several limitations. The activity-free effect sizes, although highly consistent across targets, are modest, and the study is confined to bioactivity regression on a single curated benchmark. The graph-convolutional model used to interpret the descriptor-versus-deep-learning gap was not competitive with the descriptor model in absolute terms and was not architecture-optimized, so that comparison is offered only as a supporting observation; and one construct, the local H\"older exponent, did not predict error. The conformal calibration sets are also modest for the smaller targets, so per-stratum coverage estimates carry sampling noise that pooled or per-target calibration could reduce.
+\subsection*{Limitations}
+The activity-free effect sizes, although consistent across targets, are modest, and the study is confined to regression on curated benchmarks. The reliability-density-neighbourhood comparison uses our regression adaptation of a method developed for classification. The graph-network comparison is a supporting observation only, and one construct (the local H\"older exponent) did not predict error (median $\rho = 0.01$).
 
-Several directions follow. We found the framework to transfer to physicochemical regression, namely aqueous solubility and lipophilicity (Figure~\ref{fig:crossdomain}), and it should extend further to the quantum-mechanical end points for which large computed data sets exist, where the locality of each property could itself be probed. The conformal demonstration here uses one confidence level and a single conditioning variable; per-target and finer-grained calibration, multi-variable conditioning, and sharper difficulty estimates are natural extensions toward prediction intervals that remain valid wherever the landscape is rough. Stronger activity-free constructs and prospective validation on active discovery campaigns would, finally, test whether activity-free roughness can guide compound triage in practice.
+\section*{Conclusions}
+Local landscape roughness, computed from a compound's training neighbours without its own activity, detects the activity-cliff failure mode that the standard per-compound reliability methods, ensemble variance, the applicability domain, Sheridan's random-forest error model, and reliability-density-neighbourhood, are all at chance or worse at identifying. It is a distinct reliability axis, complementary to the proximity-based signals in use, and conditioning a conformal predictor on it keeps prediction-interval coverage valid on the cliffs those signals miss. Because it needs no assay of the query and is reproducible from open data and code, it is a practical addition to the QSAR reliability toolkit precisely where models are most often, and most confidently, wrong.
 
-\section*{Conclusion}
+\section*{List of abbreviations}
+QSAR: quantitative structure--activity relationship; AD: applicability domain; RF: random forest; GIN: graph isomorphism network; SALI: structure--activity landscape index; RDN: reliability-density neighbourhood; ROGI: roughness index; ECFP: extended-connectivity fingerprint; AUC: area under the receiver-operating-characteristic curve; MAE: mean absolute error; OOB: out-of-bag; CI: confidence interval.
 
-Local landscape roughness, computed from a compound's training neighbors without its own activity, is the per-compound scale on which QSAR reliability should be judged in the regime where models fail. It is distinct from and complementary to the proximity-based signals already in use, and conditioning a conformal predictor on it keeps prediction-interval coverage valid on the activity cliffs those signals systematically miss.
+\section*{Declarations}
 
-\section*{Associated Content}
+\subsection*{Ethics approval and consent to participate}
+Not applicable.
 
-\subsection*{Data Availability Statement}
+\subsection*{Consent for publication}
+Not applicable.
 
-The bioactivity benchmark used in this work (30 ChEMBL targets with activity-cliff annotations and fixed train/test splits) is the publicly available MoleculeACE data set.\cite{vantilborg2022} The external physicochemical benchmarks (ESOL aqueous solubility and Lipophilicity) are distributed publicly with MoleculeNet.\cite{delaney2004,wu2018} All analysis code, the derived per-compound descriptor and error tables, and scripts that regenerate every figure and table in this article are openly available in a public repository (\url{https://github.com/krishnatheaverage/qsar-landscape-roughness}), with a single \texttt{reproduce.sh} entry point and a pinned environment. A snapshot of the repository at the version used for this submission is archived on Zenodo (concept DOI \texttt{10.5281/zenodo.20603136}, which resolves to the latest archived version). No proprietary or access-restricted data were used.
+\subsection*{Availability of data and materials}
+The bioactivity benchmark (30 ChEMBL targets with activity-cliff annotations and fixed train/test splits) is the publicly available MoleculeACE data set,\cite{vantilborg2022} and the external benchmarks (ESOL, Lipophilicity) are distributed with MoleculeNet.\cite{delaney2004,wu2018} All analysis code, the derived per-compound descriptor and error tables, and scripts that regenerate every figure and table are openly available under the MIT licence at \url{https://github.com/krishnatheaverage/qsar-landscape-roughness}, with a single \texttt{reproduce.sh} entry point and a pinned environment (Python 3.12, RDKit, scikit-learn, PyTorch, statsmodels). A snapshot is archived on Zenodo (concept DOI \texttt{10.5281/zenodo.20603136}, which resolves to the latest version).
 
-\begin{suppinfo}
+\subsection*{Competing interests}
+The author declares no competing interests.
 
-Per-target Spearman correlations between each roughness descriptor and per-compound error, applicability-domain partial correlations, and activity-cliff fractions for all 30 benchmark targets; full robustness tables across neighborhood size and molecular distance metric; extended graph-network architecture and training details with per-target errors; and conformal prediction-interval coverage by conditioning variable (tree variance, roughness, applicability domain, combined) and construction (PDF).
+\subsection*{Funding}
+No funding was received for this work.
 
-\end{suppinfo}
+\subsection*{Authors' contributions}
+K.H. conceived the study, implemented the analyses, and wrote the manuscript. The author read and approved the final manuscript.
 
-\section*{Author Information}
-
-\noindent\textbf{Corresponding Author}\\
-Krishna Harish, Elkins High School, Missouri City, Texas, United States. Email: krishnaharish2009@gmail.com
-
-\noindent\textbf{Notes}\\
-The author declares no competing financial interest.
-
-\section*{Funding Sources}
-
-The author received no specific funding for this work.
-
-\begin{acknowledgement}
-
-The author thanks the developers of RDKit and scikit-learn, and the maintainers of the MoleculeACE and MoleculeNet benchmarks, for making their software and data openly available.
-
-\end{acknowledgement}
+\subsection*{Acknowledgements}
+The author thanks the developers of RDKit and scikit-learn and the maintainers of the MoleculeACE and MoleculeNet benchmarks for making their software and data openly available.
 
 \begin{thebibliography}{99}
 
-\bibitem{vamathevan2019} Vamathevan, J.; Clark, D.; Czodrowski, P.; Dunham, I.; Ferran, E.; Lee, G.; others Applications of Machine Learning in Drug Discovery and Development. \textit{Nat. Rev. Drug Discov.} \textbf{2019}, \textit{18}, 463--477.
-
+\bibitem{vamathevan2019} Vamathevan, J.; et al. Applications of Machine Learning in Drug Discovery and Development. \textit{Nat. Rev. Drug Discov.} \textbf{2019}, \textit{18}, 463--477.
 \bibitem{walters2021} Walters, W. P.; Barzilay, R. Critical Assessment of AI in Drug Discovery. \textit{Expert Opin. Drug Discov.} \textbf{2021}, \textit{16}, 937--947.
-
 \bibitem{johnson1990} Johnson, M. A.; Maggiora, G. M., Eds. \textit{Concepts and Applications of Molecular Similarity}; Wiley: New York, 1990.
-
 \bibitem{maggiora2006} Maggiora, G. M. On Outliers and Activity Cliffs: Why QSAR Often Disappoints. \textit{J. Chem. Inf. Model.} \textbf{2006}, \textit{46}, 1535.
-
 \bibitem{stumpfe2012} Stumpfe, D.; Bajorath, J. Exploring Activity Cliffs in Medicinal Chemistry. \textit{J. Med. Chem.} \textbf{2012}, \textit{55}, 2932--2942.
-
-\bibitem{cruzmonteagudo2014} Cruz-Monteagudo, M.; Medina-Franco, J. L.; P\'erez-Castillo, Y.; Nicolotti, O.; Cordeiro, M. N. D. S.; Borges, F. Activity Cliffs in Drug Discovery: Dr Jekyll or Mr Hyde? \textit{Drug Discov. Today} \textbf{2014}, \textit{19}, 1069--1080.
-
-\bibitem{vantilborg2022} van Tilborg, D.; Alenicheva, A.; Grisoni, F. Exposing the Limitations of Molecular Machine Learning with Activity Cliffs. \textit{J. Chem. Inf. Model.} \textbf{2022}, \textit{62}, 5938--5951. DOI: \texttt{10.1021/acs.jcim.2c01073}.
-
-\bibitem{dablander2023} Dablander, M.; Hanser, T.; Lambiotte, R.; Morris, G. M. Exploring QSAR Models for Activity-Cliff Prediction. \textit{J. Cheminform.} \textbf{2023}, \textit{15}, 47. DOI: \texttt{10.1186/s13321-023-00708-w}.
-
-\bibitem{aldeghi2022} Aldeghi, M.; Graff, D. E.; Frey, N.; Morrone, J. A.; Pyzer-Knapp, E. O.; Jordan, K. E.; Coley, C. W. Roughness of Molecular Property Landscapes and Its Impact on Modellability. \textit{J. Chem. Inf. Model.} \textbf{2022}, \textit{62}, 4660--4671. DOI: \texttt{10.1021/acs.jcim.2c00903}.
-
-\bibitem{graff2023} Graff, D. E.; Pyzer-Knapp, E. O.; Jordan, K. E.; Shakhnovich, E. I.; Coley, C. W. Evaluating the Roughness of Structure--Property Relationships Using Pretrained Molecular Representations. \textit{Digital Discovery} \textbf{2023}, \textit{2}, 1452--1460. DOI: \texttt{10.1039/D3DD00088E}.
-
-\bibitem{golbraikh2014} Golbraikh, A.; Muratov, E.; Fourches, D.; Tropsha, A. Data Set Modelability by QSAR. \textit{J. Chem. Inf. Model.} \textbf{2014}, \textit{54}, 1--4. DOI: \texttt{10.1021/ci400572x}.
-
+\bibitem{cruzmonteagudo2014} Cruz-Monteagudo, M.; et al. Activity Cliffs in Drug Discovery: Dr Jekyll or Mr Hyde? \textit{Drug Discov. Today} \textbf{2014}, \textit{19}, 1069--1080.
+\bibitem{vantilborg2022} van Tilborg, D.; Alenicheva, A.; Grisoni, F. Exposing the Limitations of Molecular Machine Learning with Activity Cliffs. \textit{J. Chem. Inf. Model.} \textbf{2022}, \textit{62}, 5938--5951.
+\bibitem{dablander2023} Dablander, M.; Hanser, T.; Lambiotte, R.; Morris, G. M. Exploring QSAR Models for Activity-Cliff Prediction. \textit{J. Cheminform.} \textbf{2023}, \textit{15}, 47.
+\bibitem{aldeghi2022} Aldeghi, M.; et al. Roughness of Molecular Property Landscapes and Its Impact on Modellability. \textit{J. Chem. Inf. Model.} \textbf{2022}, \textit{62}, 4660--4671.
+\bibitem{graff2023} Graff, D. E.; et al. Evaluating the Roughness of Structure--Property Relationships Using Pretrained Molecular Representations. \textit{Digital Discovery} \textbf{2023}, \textit{2}, 1452--1460.
+\bibitem{golbraikh2014} Golbraikh, A.; Muratov, E.; Fourches, D.; Tropsha, A. Data Set Modelability by QSAR. \textit{J. Chem. Inf. Model.} \textbf{2014}, \textit{54}, 1--4.
 \bibitem{peltason2007} Peltason, L.; Bajorath, J. SAR Index: Quantifying the Nature of Structure--Activity Relationships. \textit{J. Med. Chem.} \textbf{2007}, \textit{50}, 5571--5578.
-
 \bibitem{guha2008} Guha, R.; Van Drie, J. H. Structure--Activity Landscape Index: Identifying and Quantifying Activity Cliffs. \textit{J. Chem. Inf. Model.} \textbf{2008}, \textit{48}, 646--658.
-
-\bibitem{netzeva2005} Netzeva, T. I.; Worth, A. P.; Aldenberg, T.; Benigni, R.; Cronin, M. T. D.; Gramatica, P.; others Current Status of Methods for Defining the Applicability Domain of (Quantitative) Structure--Activity Relationships. \textit{ATLA, Altern. Lab. Anim.} \textbf{2005}, \textit{33}, 155--173.
-
-\bibitem{sahigara2012} Sahigara, F.; Mansouri, K.; Ballabio, D.; Mauri, A.; Consonni, V.; Todeschini, R. Comparison of Different Approaches to Define the Applicability Domain of QSAR Models. \textit{Molecules} \textbf{2012}, \textit{17}, 4791--4810.
-
-\bibitem{norinder2014} Norinder, U.; Carlsson, L.; Boyer, S.; Eklund, M. Introducing Conformal Prediction in Predictive Modeling. A Transparent and Flexible Alternative to Applicability Domain Determination. \textit{J. Chem. Inf. Model.} \textbf{2014}, \textit{54}, 1596--1603. DOI: \texttt{10.1021/ci5001168}.
-
-\bibitem{hirschfeld2020} Hirschfeld, L.; Swanson, K.; Yang, K.; Barzilay, R.; Coley, C. W. Uncertainty Quantification Using Neural Networks for Molecular Property Prediction. \textit{J. Chem. Inf. Model.} \textbf{2020}, \textit{60}, 3770--3780. DOI: \texttt{10.1021/acs.jcim.0c00502}.
-
-\bibitem{sheridan2012} Sheridan, R. P. Three Useful Dimensions for Domain Applicability in QSAR Models Using Random Forest. \textit{J. Chem. Inf. Model.} \textbf{2012}, \textit{52} (3), 814--823. DOI: \texttt{10.1021/ci300004n}.
-
-\bibitem{aniceto2016} Aniceto, N.; Freitas, A. A.; Bender, A.; Ghafourian, T. A Novel Applicability Domain Technique for Mapping Predictive Reliability across the Chemical Space of a QSAR: Reliability-Density Neighbourhood. \textit{J. Cheminform.} \textbf{2016}, \textit{8}, 69. DOI: \texttt{10.1186/s13321-016-0182-y}.
-
-\bibitem{gaulton2012} Gaulton, A.; Bellis, L. J.; Bento, A. P.; Chambers, J.; Davies, M.; Hersey, A.; others ChEMBL: A Large-Scale Bioactivity Database for Drug Discovery. \textit{Nucleic Acids Res.} \textbf{2012}, \textit{40}, D1100--D1107.
-
+\bibitem{netzeva2005} Netzeva, T. I.; et al. Current Status of Methods for Defining the Applicability Domain of (Q)SARs. \textit{ATLA, Altern. Lab. Anim.} \textbf{2005}, \textit{33}, 155--173.
+\bibitem{sahigara2012} Sahigara, F.; et al. Comparison of Different Approaches to Define the Applicability Domain of QSAR Models. \textit{Molecules} \textbf{2012}, \textit{17}, 4791--4810.
+\bibitem{norinder2014} Norinder, U.; Carlsson, L.; Boyer, S.; Eklund, M. Introducing Conformal Prediction in Predictive Modeling. \textit{J. Chem. Inf. Model.} \textbf{2014}, \textit{54}, 1596--1603.
+\bibitem{hirschfeld2020} Hirschfeld, L.; Swanson, K.; Yang, K.; Barzilay, R.; Coley, C. W. Uncertainty Quantification Using Neural Networks for Molecular Property Prediction. \textit{J. Chem. Inf. Model.} \textbf{2020}, \textit{60}, 3770--3780.
+\bibitem{sheridan2012} Sheridan, R. P. Three Useful Dimensions for Domain Applicability in QSAR Models Using Random Forest. \textit{J. Chem. Inf. Model.} \textbf{2012}, \textit{52}, 814--823.
+\bibitem{aniceto2016} Aniceto, N.; Freitas, A. A.; Bender, A.; Ghafourian, T. A Novel Applicability Domain Technique for Mapping Predictive Reliability across the Chemical Space of a QSAR: Reliability-Density Neighbourhood. \textit{J. Cheminform.} \textbf{2016}, \textit{8}, 69.
+\bibitem{gaulton2012} Gaulton, A.; et al. ChEMBL: A Large-Scale Bioactivity Database for Drug Discovery. \textit{Nucleic Acids Res.} \textbf{2012}, \textit{40}, D1100--D1107.
 \bibitem{delaney2004} Delaney, J. S. ESOL: Estimating Aqueous Solubility Directly from Molecular Structure. \textit{J. Chem. Inf. Comput. Sci.} \textbf{2004}, \textit{44}, 1000--1005.
-
-\bibitem{wu2018} Wu, Z.; Ramsundar, B.; Feinberg, E. N.; Gomes, J.; Geniesse, C.; Pappu, A. S.; Leswing, K.; Pande, V. MoleculeNet: A Benchmark for Molecular Machine Learning. \textit{Chem. Sci.} \textbf{2018}, \textit{9}, 513--530.
-
+\bibitem{wu2018} Wu, Z.; et al. MoleculeNet: A Benchmark for Molecular Machine Learning. \textit{Chem. Sci.} \textbf{2018}, \textit{9}, 513--530.
 \bibitem{bemis1996} Bemis, G. W.; Murcko, M. A. The Properties of Known Drugs. 1. Molecular Frameworks. \textit{J. Med. Chem.} \textbf{1996}, \textit{39}, 2887--2893.
-
 \bibitem{rogers2010} Rogers, D.; Hahn, M. Extended-Connectivity Fingerprints. \textit{J. Chem. Inf. Model.} \textbf{2010}, \textit{50}, 742--754.
 
-\bibitem{breiman2001} Breiman, L. Random Forests. \textit{Mach. Learn.} \textbf{2001}, \textit{45}, 5--32.
-
-\bibitem{xu2019} Xu, K.; Hu, W.; Leskovec, J.; Jegelka, S. How Powerful Are Graph Neural Networks? International Conference on Learning Representations (ICLR). 2019.
-
-\bibitem{benjamini1995} Benjamini, Y.; Hochberg, Y. Controlling the False Discovery Rate: A Practical and Powerful Approach to Multiple Testing. \textit{J. R. Stat. Soc. B} \textbf{1995}, \textit{57}, 289--300.
-
-\bibitem{papadopoulos2002} Papadopoulos, H.; Proedrou, K.; Vovk, V.; Gammerman, A. Inductive Confidence Machines for Regression. In \textit{Machine Learning: ECML 2002}; Lecture Notes in Computer Science 2430; Springer: Berlin, 2002; pp 345--356.
-
-\bibitem{papadopoulos2011} Papadopoulos, H.; Haralambous, H. Reliable Prediction Intervals with Regression Neural Networks. \textit{Neural Netw.} \textbf{2011}, \textit{24} (8), 842--851.
-
-\bibitem{bostrom2020} Bostr\"om, H.; Johansson, U. Mondrian Conformal Regressors. In \textit{Proceedings of the Ninth Symposium on Conformal and Probabilistic Prediction and Applications}; Proceedings of Machine Learning Research 128; PMLR, 2020; pp 114--133.
-
 \end{thebibliography}
-
-\begin{tocentry}
-\includegraphics[width=\linewidth]{TOC_graphic.png}
-\end{tocentry}
 
 \end{document}
